@@ -1,33 +1,37 @@
 export type CardKind = 'codeBlock' | 'codeTuple' | 'description';
 
-export type CodeBlockCard = {
+export type CodeBlockCardContent = {
 	kind: CardKind;
 	code: string;
 };
 
-export type CodeTupleCard = {
+export type CodeTupleCardContent = {
 	kind: CardKind;
 	code: string;
 	description: string;
 };
 
-export type DescriptionCard = {
+export type DescriptionCardContent = {
 	kind: CardKind;
 	text: string;
 };
 
-export type Card = CodeBlockCard | CodeTupleCard | DescriptionCard;
+export type CardContent = CodeBlockCardContent | CodeTupleCardContent | DescriptionCardContent;
 
-export function isCodeBlock(card: Card): card is CodeBlockCard {
-	return card.kind === 'codeBlock';
+export function isCodeBlock(content: CardContent): content is CodeBlockCardContent {
+	return content.kind === 'codeBlock';
 }
 
-export function isCodeTuple(card: Card): card is CodeTupleCard {
-	return card.kind === 'codeTuple';
+export function isCodeTuple(content: CardContent): content is CodeTupleCardContent {
+	return content.kind === 'codeTuple';
 }
 
-export function isDescription(card: Card): card is DescriptionCard {
-	return card.kind === 'description';
+export function isDescription(content: CardContent): content is DescriptionCardContent {
+	return content.kind === 'description';
+}
+
+export interface Card {
+	contents: CardContent[];
 }
 
 export interface Section {
@@ -40,8 +44,19 @@ export interface Chapter {
 	sections: Section[];
 }
 
-export interface Subject {
+export interface Cheatsheet {
 	title: string;
 	chapters: Chapter[];
 	sections: Section[];
+}
+
+export interface File {
+	name: string;
+	path: string;
+}
+
+export interface Directory {
+	name: string;
+	path: string;
+	files: File[];
 }

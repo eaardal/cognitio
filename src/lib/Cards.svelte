@@ -9,13 +9,15 @@
 </script>
 
 {#each cards as card}
-	{#if isCodeBlock(card)}
-		<CodeBlock code={card.code} />
-	{/if}
-	{#if isCodeTuple(card)}
-		<CodeTuple code={card.code} description={card.description} />
-	{/if}
-	{#if isDescription(card)}
-		<Description text={card.text} />
-	{/if}
+	{#each card.contents as content}
+		{#if isCodeBlock(content)}
+			<CodeBlock code={content.code} />
+		{/if}
+		{#if isCodeTuple(content)}
+			<CodeTuple code={content.code} description={content.description} />
+		{/if}
+		{#if isDescription(content)}
+			<Description text={content.text} />
+		{/if}
+	{/each}
 {/each}

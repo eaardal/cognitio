@@ -116,6 +116,24 @@ export function patchHtmlWithMkTextBlockDivs(html: string) {
 	walkBackwards(preTags, doc);
 	walkForwards(preTags, doc);
 
+	preTags.forEach((pre) => {
+		pre.classList.add('mk-pre');
+
+		const div = doc.createElement('div');
+		div.className = 'mk-code-block';
+
+		pre.parentNode?.insertBefore(div, pre);
+		div.appendChild(pre);
+
+		const copybtn = doc.createElement('input');
+		copybtn.type = 'button';
+		copybtn.value = 'Copy';
+		copybtn.id = 'mk-copy-btn';
+		copybtn.className = 'mk-copy-btn';
+
+		div.appendChild(copybtn);
+	});
+
 	// Serialize the updated document back to an HTML string
 	return new XMLSerializer().serializeToString(doc);
 }

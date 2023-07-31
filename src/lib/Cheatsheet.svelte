@@ -1,6 +1,23 @@
 <script lang="ts">
+	import { afterUpdate } from 'svelte';
 	import './Cheatsheet.css';
 	export let cheatsheet: Record<string, string>;
+
+	afterUpdate(() => {
+		const divs = document.querySelectorAll('#mk-copy-btn');
+		divs.forEach((div) => {
+			div.addEventListener('click', (ev) => {
+				const target = ev.target as HTMLButtonElement;
+				const codeElems = target.parentElement?.querySelectorAll('code');
+
+				if (codeElems && codeElems.length > 0) {
+					const code = codeElems[0];
+					navigator.clipboard.writeText(code.innerText);
+					console.log('wrote to clipboard:', code.innerText);
+				}
+			});
+		});
+	});
 </script>
 
 <div class="cheatsheet">

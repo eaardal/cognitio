@@ -68,14 +68,14 @@ const addCustomCssClassesToMarkdown = {
 		html += `<h${level} class="mk-h${level}">${text}</h${level}>`;
 		return html;
 	},
-
 	paragraph(text: string) {
 		// Set a class for <p> tags so we can target them with styling.
 		return `<p class="mk-p">${text}</p>`;
 	},
-	code(code: string, language: string) {
+	code(code: string, language: string, escaped: boolean) {
+		console.log('CODE RENDERER', code, language, escaped);
 		// Set a class for <code> tags so we can target them with styling.
-		return `<code class="mk-code language-${language}">${code}</code>`;
+		return `<code class="hljs language-${language}">${code}</code>`;
 	},
 	codespan(code: string) {
 		// TODO: Set a class for inline code markdown with `const foo = "bar"` syntax`
@@ -98,6 +98,7 @@ marked.use(
 		hooks
 	},
 	markedHighlight({
+		langPrefix: 'mk-code language-',
 		highlight(code, lang) {
 			const language = hljs.getLanguage(lang) ? lang : 'plaintext';
 			return hljs.highlight(code, { language }).value;

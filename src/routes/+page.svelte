@@ -51,5 +51,6 @@
 
 	.page-content {
 		padding: 24px;
+		padding-top: 0;
 	}
 </style>

@@ -35,7 +35,9 @@
 	}
 
 	.menu-list {
-		padding: 16px;
+		list-style: none;
+		padding-inline-start: 0;
+		padding: 24px;
 	}
 
 	.menu-item {

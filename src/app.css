@@ -151,7 +151,9 @@ a:focus {
 
 ul,
 li {
-	list-style: none;
+	padding-inline-start: 4px;
+	list-style-position: inside;
+	margin: 0;
 }
 
 h1,

@@ -1,4 +1,185 @@
+/* FIRA CODE FONT: */
+
+@font-face {
+	font-family: 'FiraCode';
+	src: url('/fonts/fira-code/FiraCode-Bold.ttf');
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'FiraCode';
+	src: url('/fonts/fira-code/FiraCode-SemiBold.ttf');
+	font-weight: 600;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'FiraCode';
+	src: url('/fonts/fira-code/FiraCode-Medium.ttf');
+	font-weight: 500;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'FiraCode';
+	src: url('/fonts/fira-code/FiraCode-Regular.ttf');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'FiraCode';
+	src: url('/fonts/fira-code/FiraCode-Light.ttf');
+	font-weight: 200;
+	font-style: normal;
+	font-display: swap;
+}
+
+/* REM FONT: */
+
+@font-face {
+	font-family: 'REM';
+	src: url('/fonts/rem/REM-Bold.ttf');
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'REM';
+	src: url('/fonts/rem/REM-SemiBold.ttf');
+	font-weight: 600;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'REM';
+	src: url('/fonts/rem/REM-Medium.ttf');
+	font-weight: 500;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'REM';
+	src: url('/fonts/rem/REM-Regular.ttf');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'REM';
+	src: url('/fonts/rem/REM-Light.ttf');
+	font-weight: 200;
+	font-style: normal;
+	font-display: swap;
+}
+
+:root {
+	/* Theme: https://coolors.co/palette/231942-5e548e-9f86c0-be95c4-e0b1cb */
+	--theme-1: #231942;
+	--theme-2: #5e548e;
+	--theme-3: #9f86c0;
+	--theme-4: #be95c4;
+	--theme-5: #e0b1cb;
+
+	/* Theme adoption to UI layers */
+	--background: var(--theme-1);
+	--foreground: var(--theme-2);
+	--primary: var(--theme-4);
+	--secondary: var(--theme-5);
+
+	/* Custom colors */
+	--white: #edded8;
+}
+
 body,
 #sveltekit-body {
 	height: 100vh;
+	background-color: var(--background);
+	margin: 0;
+	padding: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+body,
+span,
+div,
+ul,
+li {
+	color: var(--white);
+	font-family: 'REM';
+	font-size: 1rem;
+	font-style: normal;
+	font-weight: 400;
+}
+
+pre,
+code {
+	font-family: 'FiraCode';
+	font-size: 1rem;
+	font-style: normal;
+	font-weight: 400;
+}
+
+a {
+	color: var(--secondary);
+	text-decoration: none;
+}
+a:hover {
+	font-weight: 600;
+}
+a:visited {
+	color: var(--secondary);
+}
+a:focus {
+	color: var(--secondary);
+}
+
+ul,
+li {
+	list-style: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	font-weight: 500;
+}
+
+h1 {
+	font-size: 2.5rem;
+	font-weight: 700;
+}
+h2 {
+	font-size: 2rem;
+	font-weight: 600;
+}
+h3 {
+	font-size: 1.5rem;
+}
+h4 {
+	font-size: 1.3rem;
+}
+h5 {
+	font-size: 1.2rem;
+}
+h6 {
+	font-size: 1.1rem;
 }

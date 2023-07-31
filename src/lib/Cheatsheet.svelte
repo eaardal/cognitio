@@ -2,11 +2,16 @@
 	export let cheatsheet: Record<string, string>;
 </script>
 
-{#each Object.keys(cheatsheet) as sectionName}
-	<h3>{sectionName}</h3>
-	<pre>
-		<code>
-			{cheatsheet[sectionName]}
-		</code>
-	</pre>
-{/each}
+<div class="cheatsheet">
+	{#each Object.keys(cheatsheet) as sectionName}
+		<h3 class="section-title">{sectionName}</h3>
+		<div class="cheatsheet-html-root">{@html cheatsheet[sectionName]}</div>
+	{/each}
+</div>
+
+<style>
+	.cheatsheet {
+		display: flex;
+		flex-direction: column;
+	}
+</style>

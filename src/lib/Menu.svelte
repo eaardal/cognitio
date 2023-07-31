@@ -16,18 +16,30 @@
 	}
 </script>
 
-<nav class="menu">
-	<ul>
+<div class="menu">
+	<ul class="menu-list">
 		{#each directories as directory}
-			<li><a href="#" on:click={onMenuItemClick(directory)}>{directory.name}</a></li>
+			<li class="menu-item">
+				<a href="#" on:click={onMenuItemClick(directory)}>{directory.name}</a>
+			</li>
 		{/each}
 	</ul>
-</nav>
+</div>
 
 <style>
 	.menu {
-		background-color: lightblue;
-		padding: 24px;
+		background-color: var(--foreground);
+		min-width: 200px;
+		width: 200px;
 		height: 100%;
+	}
+
+	.menu-list {
+		padding: 16px;
+	}
+
+	.menu-item {
+		font-size: 1em;
+		color: var(--white);
 	}
 </style>

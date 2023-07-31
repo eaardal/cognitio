@@ -1,24 +1,44 @@
 <script lang="ts">
+	import 'highlight.js/styles/github-dark.css';
 	import { invoke } from '@tauri-apps/api/tauri';
-	import { parse } from 'yaml';
+	import { marked } from 'marked';
+	import { markedHighlight } from 'marked-highlight';
+	import dompurify from 'dompurify';
+	import hljs from 'highlight.js';
 	import Cheatsheet from '$lib/Cheatsheet.svelte';
 	import Menu from '$lib/Menu.svelte';
-	import type { Directory, File, Cheatsheet as CheatsheetModel } from '$lib/models';
+	import type { Directory, File } from '$lib/models';
+
+	hljs.highlightAll();
+
+	marked.use(
+		{
+			mangle: false,
+			headerIds: false
+		},
+		markedHighlight({
+			highlight(code, lang) {
+				const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+				return hljs.highlight(code, { language }).value;
+			}
+		})
+	);
 
 	let currentCheatsheet: Record<string, string>;
 
-	invoke('greeting')
-		.then((value) => {
-			console.log('greeting', value);
-		})
-		.catch((e) => console.error(e));
-
 	function loadCheatsheet(files: File[]) {
-		console.log(`loading files`, files);
 		invoke('load_cheatsheet', { files })
 			.then((value) => {
-				console.log('cheatsheet', value);
-				currentCheatsheet = value as Record<string, string>;
+				const rawCheatsheet = value as Record<string, string>;
+
+				const cheatsheet = Object.keys(rawCheatsheet).reduce((all, key) => {
+					const markdown = rawCheatsheet[key] as string;
+					const sanitizedMarkdown = dompurify.sanitize(markdown);
+					const html = marked.parse(sanitizedMarkdown);
+					return html ? { ...all, [key]: html } : all;
+				}, {} as Record<string, string>);
+
+				currentCheatsheet = cheatsheet;
 			})
 			.catch((e) => {
 				console.error(e);
@@ -26,29 +46,28 @@
 	}
 
 	function menuItemClicked(event: CustomEvent<Directory>) {
-		console.log('clicked', event.detail);
 		loadCheatsheet(event.detail.files);
 	}
 </script>
 
-<div class="root">
-	<aside>
-		<Menu on:onMenuItemClick={menuItemClicked} />
-	</aside>
-	<main>
+<div class="page-root">
+	<Menu on:onMenuItemClick={menuItemClicked} />
+
+	<div class="page-content">
 		{#if currentCheatsheet}
 			<Cheatsheet cheatsheet={currentCheatsheet} />
 		{/if}
-	</main>
+	</div>
 </div>
 
 <style>
-	.root {
-		display: flex;
+	.page-root {
 		height: 100%;
+		display: flex;
+		flex-direction: row;
 	}
 
-	main {
+	.page-content {
 		padding: 24px;
 	}
 </style>

@@ -44,10 +44,15 @@ export interface Chapter {
 	sections: Section[];
 }
 
+// export interface Cheatsheet {
+// 	title: string;
+// 	chapters: Chapter[];
+// 	sections: Section[];
+// }
+
 export interface Cheatsheet {
 	title: string;
-	chapters: Chapter[];
-	sections: Section[];
+	markdown: string;
 }
 
 export interface File {

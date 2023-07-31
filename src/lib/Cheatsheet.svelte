@@ -1,4 +1,5 @@
 <script lang="ts">
+	import './Cheatsheet.css';
 	export let cheatsheet: Record<string, string>;
 </script>
 
@@ -13,5 +14,11 @@
 	.cheatsheet {
 		display: flex;
 		flex-direction: column;
+	}
+
+	.cheatsheet-html-root {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 16px;
 	}
 </style>

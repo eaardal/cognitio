@@ -1,3 +1,16 @@
+function generateRandomText(): string {
+	const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	let result = '';
+	const charactersLength = characters.length;
+
+	for (let i = 0; i < 6; i++) {
+		const randomIndex = Math.floor(Math.random() * charactersLength);
+		result += characters.charAt(randomIndex);
+	}
+
+	return result;
+}
+
 // Walk backwards from each <pre> tag until we meet the section's heading (<h3>) or another <pre> tag
 // and wrap everything in between into a new div.
 function walkBackwards(preTags: NodeListOf<HTMLPreElement>, doc: Document) {
@@ -117,21 +130,30 @@ export function patchHtmlWithMkTextBlockDivs(html: string) {
 	walkForwards(preTags, doc);
 
 	preTags.forEach((pre) => {
+		const rnd = generateRandomText();
+
 		pre.classList.add('mk-pre');
+		pre.id = `mk-pre-${rnd}`;
 
-		const div = doc.createElement('div');
-		div.className = 'mk-code-block';
+		const codeBlockDiv = doc.createElement('div');
+		codeBlockDiv.className = 'mk-code-block';
 
-		pre.parentNode?.insertBefore(div, pre);
-		div.appendChild(pre);
+		pre.parentNode?.insertBefore(codeBlockDiv, pre);
+
+		const codeBoundaryDiv = doc.createElement('div');
+		codeBoundaryDiv.id = `mk-code-boundary-${rnd}`;
+		codeBoundaryDiv.className = 'mk-code-boundary';
+		codeBoundaryDiv.appendChild(pre);
+
+		codeBlockDiv.appendChild(codeBoundaryDiv);
 
 		const copybtn = doc.createElement('input');
+		copybtn.id = `mk-copy-btn-${rnd}`;
+		copybtn.className = 'mk-copy-btn';
 		copybtn.type = 'button';
 		copybtn.value = 'Copy';
-		copybtn.id = 'mk-copy-btn';
-		copybtn.className = 'mk-copy-btn';
 
-		div.appendChild(copybtn);
+		codeBlockDiv.appendChild(copybtn);
 	});
 
 	// Serialize the updated document back to an HTML string

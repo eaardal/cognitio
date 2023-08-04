@@ -5,11 +5,8 @@
 
 	const dispatch = createEventDispatcher();
 
-	let directories: Directory[] = [];
-
-	invoke('list_cheatsheet_directories').then((value) => {
-		directories = value as Directory[];
-	});
+	export let directories: Directory[] = [];
+	export let activeDirectory: Directory | undefined;
 
 	function onMenuItemClick(directory: Directory): undefined {
 		dispatch('onMenuItemClick', directory);
@@ -19,7 +16,7 @@
 <div class="menu">
 	<ul class="menu-list">
 		{#each directories as directory}
-			<li class="menu-item">
+			<li class="menu-item" class:active={activeDirectory?.name === directory.name}>
 				<a href="#" on:click={onMenuItemClick(directory)}>{directory.name}</a>
 			</li>
 		{/each}
@@ -42,6 +39,11 @@
 
 	.menu-item {
 		font-size: 1em;
+		color: var(--white);
+	}
+
+	.active > a {
+		font-weight: 600;
 		color: var(--white);
 	}
 </style>

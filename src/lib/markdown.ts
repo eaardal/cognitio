@@ -81,6 +81,19 @@ const addCustomCssClassesToMarkdown = {
 		// TODO: Set a class for inline code markdown with `const foo = "bar"` syntax`
 		console.log('codespan:', code);
 		return code;
+	},
+	table(header: string, body: string) {
+		console.log('table: header, body', header, body);
+		return `<table class="mk-table"><thead class="mk-table-head">${header}</thead><tbody class="mk-table-body">${body}</tbody></table>`;
+	},
+	tablerow(content: string) {
+		console.log('tablerow: content', content);
+		return `<tr class="mk-table-row">${content}</tr>`;
+	},
+	tablecell(content: string, flags: Record<string, unknown>) {
+		console.log('tablecell: content, flags', content, flags);
+		const align = flags.align ? `text-align: ${flags.align};` : '';
+		return `<td class="mk-table-cell" style="${align}">${content}</td>`;
 	}
 };
 

@@ -2,24 +2,26 @@
 	min-width: 250px;
 	background-color: color-mix(in srgb, var(--background) 70%, var(--foreground));
 	border: solid 1px var(--foreground);
-	border-radius: 16px;
+	border-radius: 4px;
 	position: relative;
 	height: fit-content;
 }
 
 .mk-section div.mk-text-block:last-child {
-	border-bottom-left-radius: 16px;
-	border-bottom-right-radius: 16px;
+	border-bottom-left-radius: 4px;
+	border-bottom-right-radius: 4px;
 }
 
 .mk-h3 {
-	font-size: 1.2rem;
+	font-size: 1.1rem;
 	font-weight: 200;
 	text-decoration: underline;
 	text-underline-offset: 8px;
 	padding-top: 8px;
 	padding-left: 16px;
 	padding-right: 16px;
+	padding-bottom: 16px;
+	margin: 0;
 }
 
 .mk-text-block {
@@ -30,10 +32,17 @@
 .mk-code-block {
 	display: flex;
 	flex-direction: column;
-	align-items: end;
-	padding-left: 16px;
-	padding-right: 16px;
+	align-items: start;
 	margin-bottom: 16px;
+}
+
+.mk-code-boundary {
+	width: 100%;
+}
+
+.mk-pre {
+	padding: 16px;
+	margin: 0;
 }
 
 .mk-copy-btn {
@@ -52,6 +61,7 @@
 	-webkit-appearance: none;
 	-moz-appearance: none;
 	border-radius: 4px;
+	margin-left: 16px;
 }
 
 .mk-copy-btn:hover,
@@ -66,4 +76,22 @@
 
 .mk-copy-btn:active {
 	transform: scale(0.99);
+}
+
+.mk-table {
+	padding: 16px;
+}
+
+.mk-table-row {
+}
+
+.mk-table-cell {
+	border-bottom: 1px solid color-mix(in srgb, var(--foreground) 80%, var(--white));
+	padding: 8px;
+	padding-left: 16px;
+	padding-right: 16px;
+}
+
+.mk-table > thead > tr > td {
+	border-bottom: 3px solid color-mix(in srgb, var(--foreground) 80%, var(--white));
 }

@@ -5,8 +5,11 @@
 	import Cheatsheet from '$lib/Cheatsheet.svelte';
 	import Menu from '$lib/Menu.svelte';
 	import type { Directory, File } from '$lib/models';
+	import { onMount } from 'svelte';
 
-	let currentCheatsheet: Record<string, string>;
+	let cheatsheetDirectories: Directory[];
+	let currentDirectory: Directory | undefined;
+	let currentCheatsheet: Record<string, string> | undefined;
 
 	function loadCheatsheet(files: File[]) {
 		invoke('load_cheatsheet', { files })
@@ -27,13 +30,36 @@
 			});
 	}
 
+	function loadCheatsheetDirectories() {
+		invoke('list_cheatsheet_directories')
+			.then((value) => {
+				cheatsheetDirectories = value as Directory[];
+				return value as Directory[];
+			})
+			.then((directories) => {
+				if (directories && directories.length > 0) {
+					currentDirectory = directories[0];
+					loadCheatsheet(currentDirectory.files);
+				}
+			});
+	}
+
 	function menuItemClicked(event: CustomEvent<Directory>) {
+		currentDirectory = event.detail;
 		loadCheatsheet(event.detail.files);
 	}
+
+	onMount(() => {
+		loadCheatsheetDirectories();
+	});
 </script>
 
 <div class="page-root">
-	<Menu on:onMenuItemClick={menuItemClicked} />
+	<Menu
+		directories={cheatsheetDirectories}
+		activeDirectory={currentDirectory}
+		on:onMenuItemClick={menuItemClicked}
+	/>
 
 	<div class="page-content">
 		{#if currentCheatsheet}

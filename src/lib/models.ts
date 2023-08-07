@@ -65,3 +65,7 @@ export interface Directory {
 	path: string;
 	files: File[];
 }
+
+export interface FileChangedPayload {
+	path: string;
+}

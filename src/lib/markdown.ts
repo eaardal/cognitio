@@ -78,9 +78,7 @@ const addCustomCssClassesToMarkdown = {
 		return `<code class="hljs language-${language}">${code}</code>`;
 	},
 	codespan(code: string) {
-		// TODO: Set a class for inline code markdown with `const foo = "bar"` syntax`
-		console.log('codespan:', code);
-		return code;
+		return `<code class="mk-inline-code">${code}</code>`;
 	},
 	table(header: string, body: string) {
 		console.log('table: header, body', header, body);
@@ -94,6 +92,9 @@ const addCustomCssClassesToMarkdown = {
 		console.log('tablecell: content, flags', content, flags);
 		const align = flags.align ? `text-align: ${flags.align};` : '';
 		return `<td class="mk-table-cell" style="${align}">${content}</td>`;
+	},
+	hr() {
+		return `<hr class="mk-hr">`;
 	}
 };
 

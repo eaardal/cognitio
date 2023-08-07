@@ -1,19 +1,23 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use futures::channel::mpsc::Sender;
+use futures::channel::oneshot::channel;
+use futures::SinkExt;
+use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
+use serde::Deserialize;
+use serde::Serialize;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::fs::File;
-use std::hash::Hash;
 use std::io::Read;
 use std::io::Result;
 use std::path::Path;
 use std::path::PathBuf;
-
-use serde::Deserialize;
-use serde::Serialize;
-use tauri::api::file;
+use std::thread;
+use tauri::App;
+use tauri::Manager;
 
 #[derive(Serialize, Deserialize)]
 struct DirectoryFile {
@@ -37,14 +41,80 @@ struct Manifest {
 }
 
 fn main() {
+    // let handle = thread::spawn(|| {
+    //     watch_cognitio_dir();
+    // });
+
+    run_tauri();
+
+    // handle.join().unwrap();
+}
+
+#[derive(Clone, serde::Serialize)]
+struct FileChangedPayload {
+    path: String,
+}
+
+type FileChangedCallback = dyn Fn(&str, &str) -> Result<()>;
+
+fn run_tauri() {
+    let (sender, receiver) = std::sync::mpsc::channel::<String>();
+
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             greeting,
             load_cheatsheet,
             list_cheatsheet_directories
         ])
+        .setup(|app| {
+            let h = app.app_handle();
+            tauri::async_runtime::spawn(watch_cognitio_dir(sender));
+            tauri::async_runtime::spawn(async move {
+                for msg in receiver.iter() {
+                    println!("Received file changed: {}", msg);
+                    // app.emit_all("file-changed", FileChangedPayload { path: msg });
+                    h.emit_all("file-changed", FileChangedPayload { path: msg });
+                }
+            });
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+async fn watch_cognitio_dir(on_file_changed: std::sync::mpsc::Sender<String>) {
+    let home = cognitio_home_dir();
+    if let Err(error) = watch(home, on_file_changed) {
+        println!("Error: {error:?}");
+    }
+}
+
+fn watch<P: AsRef<Path>>(
+    path: P,
+    on_file_changed: std::sync::mpsc::Sender<String>,
+) -> notify::Result<()> {
+    let (tx, rx) = std::sync::mpsc::channel();
+
+    // Automatically select the best implementation for your platform.
+    // You can also access each implementation directly e.g. INotifyWatcher.
+    let mut watcher = RecommendedWatcher::new(tx, Config::default())?;
+
+    // Add a path to be watched. All files and directories at that path and
+    // below will be monitored for changes.
+    watcher.watch(path.as_ref(), RecursiveMode::Recursive)?;
+
+    for res in rx {
+        match res {
+            Ok(event) => {
+                println!("Change: {event:?}");
+                on_file_changed.send(event.paths[0].to_str().unwrap_or_default().into());
+            }
+
+            Err(error) => println!("Error: {error:?}"),
+        }
+    }
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -99,23 +169,6 @@ fn read_file_to_string(file_path: &str) -> Result<String> {
 
     Ok(contents)
 }
-
-// fn get_subdirectories(root_dir: &str) -> Vec<String> {
-//     let mut dirs = Vec::new();
-
-//     if let Ok(entries) = fs::read_dir(root_dir) {
-//         for entry in entries {
-//             if let Ok(entry) = entry {
-//                 let path = entry.path();
-//                 if path.is_dir() {
-//                     dirs.push(path.to_str().unwrap_or_default().to_string())
-//                 }
-//             }
-//         }
-//     }
-
-//     dirs
-// }
 
 fn list_subdirectories(root_dir: &str) -> Vec<Directory> {
     let mut directories = Vec::new();

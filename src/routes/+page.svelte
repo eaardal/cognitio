@@ -1,15 +1,18 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/tauri';
+	import { listen } from '@tauri-apps/api/event';
+	import type { Event, UnlistenFn } from '@tauri-apps/api/event';
 	import dompurify from 'dompurify';
 	import { marked } from '$lib/markdown';
 	import Cheatsheet from '$lib/Cheatsheet.svelte';
 	import Menu from '$lib/Menu.svelte';
-	import type { Directory, File } from '$lib/models';
-	import { onMount } from 'svelte';
+	import type { Directory, File, FileChangedPayload } from '$lib/models';
+	import { onMount, onDestroy } from 'svelte';
 
 	let cheatsheetDirectories: Directory[];
 	let currentDirectory: Directory | undefined;
 	let currentCheatsheet: Record<string, string> | undefined;
+	let subscriptions: UnlistenFn[] = [];
 
 	function loadCheatsheet(files: File[]) {
 		invoke('load_cheatsheet', { files })
@@ -49,8 +52,21 @@
 		loadCheatsheet(event.detail.files);
 	}
 
-	onMount(() => {
+	onMount(async () => {
 		loadCheatsheetDirectories();
+
+		const unlisten = await listen('file-changed', (event: Event<FileChangedPayload>) => {
+			if (event.event === 'file-changed') {
+				loadCheatsheetDirectories();
+			}
+		});
+		subscriptions.push(unlisten);
+	});
+
+	onDestroy(async () => {
+		for (const sub of subscriptions) {
+			sub();
+		}
 	});
 </script>
 

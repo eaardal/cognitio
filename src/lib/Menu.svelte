@@ -10,7 +10,11 @@
 	export let activeDirectory: Directory | undefined;
 
 	function onMenuItemClick(directory: Directory): undefined {
-		dispatch('onMenuItemClick', directory);
+		dispatch('menu-item-click', directory);
+	}
+
+	function onEditCognitioConfigClick() {
+		dispatch('edit-cognitio-config-click');
 	}
 </script>
 
@@ -33,6 +37,10 @@
 			</div>
 		{/each}
 	</ul>
+	<div class="bottom">
+		<hr />
+		<button class="edit-btn" on:click={onEditCognitioConfigClick}>Edit Cognitio Config</button>
+	</div>
 </div>
 
 <style>
@@ -40,7 +48,8 @@
 		background-color: var(--foreground);
 		min-width: 200px;
 		width: 200px;
-		height: 100%;
+		display: flex;
+		flex-direction: column;
 	}
 
 	.menu-list {
@@ -68,5 +77,45 @@
 		text-transform: uppercase;
 		font-size: 0.8em;
 		letter-spacing: 1.3px;
+	}
+
+	.bottom {
+		width: 100%;
+		height: 50px;
+	}
+
+	.bottom > hr {
+		border-color: color-mix(in srgb, var(--foreground) 80%, var(--white));
+		color: color-mix(in srgb, var(--foreground) 80%, var(--white));
+		display: block;
+		height: 1px;
+		border: 0;
+		border-top: 1px solid color-mix(in srgb, var(--foreground) 80%, var(--white));
+		margin: 1em 0;
+		padding: 0;
+	}
+
+	.edit-btn {
+		display: inline-block;
+		border: none;
+		padding: 2px 4px;
+		margin: 0;
+		text-decoration: none;
+		background: var(--foreground);
+		color: color-mix(in srgb, var(--theme-3) 80%, var(--white));
+		font-family: 'REM';
+		font-size: 0.8rem;
+		cursor: pointer;
+		text-align: center;
+		transition: background 250ms ease-in-out, transform 150ms ease;
+		-webkit-appearance: none;
+		-moz-appearance: none;
+		border-radius: 4px;
+		margin-left: 24px;
+	}
+
+	.edit-btn:hover,
+	.edit-btn:focus {
+		background: color-mix(in srgb, var(--background) 90%, var(--white));
 	}
 </style>

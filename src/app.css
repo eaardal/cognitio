@@ -106,7 +106,7 @@
 
 body,
 #sveltekit-body {
-	height: 100vh;
+	height: 100%;
 	background-color: var(--background);
 	margin: 0;
 	padding: 0;
@@ -123,7 +123,8 @@ body,
 span,
 div,
 ul,
-li {
+li,
+button {
 	color: var(--white);
 	font-family: 'REM';
 	font-size: 1rem;

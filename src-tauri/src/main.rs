@@ -14,7 +14,9 @@ use std::io::Result;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::mpsc::channel;
+use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
+use tauri::AppHandle;
 use tauri::Manager;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -39,6 +41,7 @@ pub struct FileChangedPayload {
 #[derive(Debug, Deserialize)]
 struct CognitioConfig {
     pub cheatsheets: Vec<String>,
+    pub editor: String,
 }
 
 fn main() {
@@ -47,26 +50,47 @@ fn main() {
 
 fn run_tauri() {
     let (sender, receiver) = channel::<String>();
+    let cheatsheet_sender = sender.clone();
+    let home_dir_sender = sender.clone();
 
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             load_cheatsheet,
-            list_cheatsheet_directories
+            list_cheatsheet_directories,
+            edit_cheatsheet,
+            edit_cognitio_config
         ])
         .setup(|app| {
-            let handle = app.app_handle();
-            tauri::async_runtime::spawn(watch_cognitio_home_dir(sender));
-            tauri::async_runtime::spawn(async move {
-                for msg in receiver.iter() {
-                    handle
-                        .emit_all("file-changed", FileChangedPayload { path: msg })
-                        .unwrap();
-                }
-            });
+            let app_handle = app.app_handle();
+            watch_cheatsheet_directories(cheatsheet_sender);
+            watch_cognitio_home_dir(home_dir_sender);
+            emit_event_to_frontend_when_file_changed(receiver, app_handle);
             Ok(())
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[tauri::command]
+fn edit_cognitio_config() {
+    let home = cognitio_home_dir();
+    let yaml_path = PathBuf::from(home).join("cognitio.yaml");
+    let conf = read_cognitio_yaml().unwrap();
+    let editor = conf.editor;
+    let _output = std::process::Command::new(editor)
+        .arg(yaml_path)
+        .output()
+        .expect("failed to execute process");
+}
+
+#[tauri::command]
+fn edit_cheatsheet(path: String) {
+    let conf = read_cognitio_yaml().unwrap();
+    let editor = conf.editor;
+    let _output = std::process::Command::new(editor)
+        .arg(path)
+        .output()
+        .expect("failed to execute process");
 }
 
 #[tauri::command]
@@ -98,13 +122,33 @@ fn list_cheatsheet_directories() -> Vec<Directory> {
             files: list_files_in_directory(&cheatsheet_path),
         })
         .collect();
-    println!("Cheatsheets: {:?}", serde_json::to_string(&res).unwrap());
+    // println!("Cheatsheets: {:?}", serde_json::to_string(&res).unwrap());
     res
 }
 
-async fn watch_cognitio_home_dir(on_file_changed: Sender<String>) {
+fn emit_event_to_frontend_when_file_changed(receiver: Receiver<String>, tauri_app: AppHandle) {
+    tauri::async_runtime::spawn(async move {
+        for msg in receiver.iter() {
+            tauri_app
+                .emit_all("file-changed", FileChangedPayload { path: msg })
+                .unwrap();
+        }
+    });
+}
+
+fn watch_cheatsheet_directories(on_file_changed: Sender<String>) {
+    for dir in list_cheatsheet_directories() {
+        tauri::async_runtime::spawn(watch_dir(dir.path, on_file_changed.clone()));
+    }
+}
+
+fn watch_cognitio_home_dir(on_file_changed: Sender<String>) {
     let home = cognitio_home_dir();
-    if let Err(error) = watch(home, on_file_changed) {
+    tauri::async_runtime::spawn(watch_dir(home, on_file_changed.clone()));
+}
+
+async fn watch_dir(path: String, on_file_changed: Sender<String>) {
+    if let Err(error) = watch(path, on_file_changed) {
         println!("Error: {error:?}");
     }
 }
@@ -118,7 +162,7 @@ fn watch<P: AsRef<Path>>(path: P, on_file_changed: Sender<String>) -> notify::Re
     for res in rx {
         match res {
             Ok(event) => {
-                println!("File changed: {event:?}");
+                println!("File changed: {:?}", event.paths);
                 on_file_changed
                     .send(event.paths[0].to_str().unwrap_or_default().into())
                     .unwrap();
@@ -146,7 +190,6 @@ fn list_subdirectories(root_dir: &str) -> Vec<Directory> {
                 let path = entry.path();
                 if path.is_dir() {
                     let name = path.file_name().unwrap().to_string_lossy().to_string();
-                    // let subdirectories = list_subdirectories(path.to_str().unwrap());
                     let files = list_files_in_directory(path.to_str().unwrap());
                     directories.push(Directory {
                         name,
@@ -190,7 +233,6 @@ fn read_cognitio_yaml() -> Result<CognitioConfig> {
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
     let manifest: CognitioConfig = serde_yaml::from_str(&contents).unwrap();
-    println!("Cognitio YAML: {:?}", manifest);
     Ok(manifest)
 }
 

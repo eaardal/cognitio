@@ -1,11 +1,19 @@
 <script lang="ts">
-	import { afterUpdate } from 'svelte';
+	import { afterUpdate, createEventDispatcher } from 'svelte';
 	import './Cheatsheet.css';
 
 	export let cheatsheet: Record<string, string>;
+	export let name: string;
+	export let path: string;
 
 	const codeBgOnCopyHover = '#584796';
 	const codeBgDefault = 'transparent';
+
+	const dispatch = createEventDispatcher();
+
+	function onEditCheatsheetClick() {
+		dispatch('edit-cheatsheet', { path, name });
+	}
 
 	function getLastPartSeparatedByDash(inputString: string): string {
 		const parts = inputString.split('-');
@@ -79,10 +87,16 @@
 </script>
 
 <div class="cheatsheet">
-	{#each Object.keys(cheatsheet) as sectionName}
-		<h3 class="section-title">{sectionName}</h3>
-		<div class="cheatsheet-html-root">{@html cheatsheet[sectionName]}</div>
-	{/each}
+	<div class="header">
+		<h2>{name}</h2>
+		<button class="edit-btn" on:click={onEditCheatsheetClick}>Edit</button>
+	</div>
+	<div class="content">
+		{#each Object.keys(cheatsheet) as sectionName}
+			<h3 class="section-title">{sectionName}</h3>
+			<div class="cheatsheet-html-root">{@html cheatsheet[sectionName]}</div>
+		{/each}
+	</div>
 </div>
 
 <style>
@@ -95,5 +109,50 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 16px;
+	}
+
+	.header {
+		--padding-sides: 24px;
+		background-color: color-mix(in srgb, var(--background) 90%, var(--white));
+		width: calc(100%-var(--padding-sides));
+		height: 50px;
+		padding-left: var(--padding-sides);
+		padding-right: var(--padding-sides);
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.header > h2 {
+		font-size: 1.2em;
+		margin: 0;
+		padding: 0;
+		color: var(--theme-3);
+	}
+
+	.content {
+		margin-left: 24px;
+	}
+
+	.edit-btn {
+		display: inline-block;
+		border: none;
+		padding: 2px 4px;
+		margin: 0;
+		text-decoration: none;
+		background: var(--foreground);
+		color: var(--accent);
+		font-family: sans-serif;
+		font-size: 0.8rem;
+		cursor: pointer;
+		text-align: center;
+		transition: background 250ms ease-in-out, transform 150ms ease;
+		border-radius: 4px;
+		margin-left: 16px;
+	}
+
+	.edit-btn:hover,
+	.edit-btn:focus {
+		background: var(--foreground-lighter);
 	}
 </style>

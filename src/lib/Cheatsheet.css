@@ -1,5 +1,6 @@
 .mk-section {
 	min-width: 250px;
+	max-width: 700px;
 	background-color: var(--background-lighter);
 	border: solid 1px var(--foreground);
 	border-radius: 4px;
@@ -83,8 +84,6 @@
 	cursor: pointer;
 	text-align: center;
 	transition: background 250ms ease-in-out, transform 150ms ease;
-	-webkit-appearance: none;
-	-moz-appearance: none;
 	border-radius: 4px;
 	margin-left: 16px;
 }

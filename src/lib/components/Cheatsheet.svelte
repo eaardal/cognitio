@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { afterUpdate, createEventDispatcher } from 'svelte';
-	import './Cheatsheet.css';
+	import '$lib/components/Cheatsheet.css';
 
 	export let cheatsheet: Record<string, string>;
 	export let name: string;

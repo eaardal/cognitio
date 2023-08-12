@@ -1,13 +1,13 @@
 <script lang="ts">
+	import { onMount, onDestroy } from 'svelte';
 	import { invoke } from '@tauri-apps/api/tauri';
 	import { listen } from '@tauri-apps/api/event';
 	import type { Event, UnlistenFn } from '@tauri-apps/api/event';
 	import dompurify from 'dompurify';
-	import { marked } from '$lib/markdown';
-	import Cheatsheet from '$lib/Cheatsheet.svelte';
-	import Menu from '$lib/Menu.svelte';
+	import { marked } from '$lib/helpers/marked';
+	import Cheatsheet from '$lib/components/Cheatsheet.svelte';
+	import Menu from '$lib/components/Menu.svelte';
 	import type { Directory, File, FileChangedPayload } from '$lib/models';
-	import { onMount, onDestroy } from 'svelte';
 
 	let cheatsheetDirectories: Directory[];
 	let currentDirectory: Directory | undefined;

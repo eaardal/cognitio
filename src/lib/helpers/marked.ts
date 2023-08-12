@@ -69,27 +69,21 @@ const addCustomCssClassesToMarkdown = {
 		return html;
 	},
 	paragraph(text: string) {
-		// Set a class for <p> tags so we can target them with styling.
 		return `<p class="mk-p">${text}</p>`;
 	},
 	code(code: string, language: string, escaped: boolean) {
-		console.log('CODE RENDERER', code, language, escaped);
-		// Set a class for <code> tags so we can target them with styling.
 		return `<code class="hljs language-${language}">${code}</code>`;
 	},
 	codespan(code: string) {
 		return `<code class="mk-inline-code">${code}</code>`;
 	},
 	table(header: string, body: string) {
-		console.log('table: header, body', header, body);
 		return `<table class="mk-table"><thead class="mk-table-head">${header}</thead><tbody class="mk-table-body">${body}</tbody></table>`;
 	},
 	tablerow(content: string) {
-		console.log('tablerow: content', content);
 		return `<tr class="mk-table-row">${content}</tr>`;
 	},
 	tablecell(content: string, flags: Record<string, unknown>) {
-		console.log('tablecell: content, flags', content, flags);
 		const align = flags.align ? `text-align: ${flags.align};` : '';
 		return `<td class="mk-table-cell" style="${align}">${content}</td>`;
 	},

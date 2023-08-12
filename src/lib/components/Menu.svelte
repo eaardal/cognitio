@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { invoke } from '@tauri-apps/api/tauri';
 	import type { Directory } from '$lib/models';
-	import Tooltip from './Tooltip.svelte';
+	import Tooltip from '$lib/components/Tooltip.svelte';
 
 	const dispatch = createEventDispatcher();
 
@@ -30,7 +29,7 @@
 					</Tooltip>
 					{#each directory.sub_directories as subDirectory}
 						<li class="menu-item" class:active={activeDirectory?.path === subDirectory.path}>
-							<a href="#" on:click={onMenuItemClick(subDirectory)}>{subDirectory.name}</a>
+							<a href="#." on:click={onMenuItemClick(subDirectory)}>{subDirectory.name}</a>
 						</li>
 					{/each}
 				{/if}
@@ -108,8 +107,6 @@
 		cursor: pointer;
 		text-align: center;
 		transition: background 250ms ease-in-out, transform 150ms ease;
-		-webkit-appearance: none;
-		-moz-appearance: none;
 		border-radius: 4px;
 		margin-left: 24px;
 	}

@@ -17,6 +17,7 @@
 	function loadCheatsheet(files: File[]) {
 		invoke('load_cheatsheet', { files })
 			.then((value) => {
+				console.log('load_cheatsheet', value);
 				const rawCheatsheet = value as Record<string, string>;
 
 				const cheatsheet = Object.keys(rawCheatsheet).reduce((all, key) => {
@@ -36,6 +37,7 @@
 	function loadCheatsheetDirectories() {
 		invoke('list_cheatsheet_directories')
 			.then((value) => {
+				console.log('load_cheatsheet_directories', value);
 				cheatsheetDirectories = value as Directory[];
 				return value as Directory[];
 			})

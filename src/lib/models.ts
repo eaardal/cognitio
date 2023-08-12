@@ -44,12 +44,6 @@ export interface Chapter {
 	sections: Section[];
 }
 
-// export interface Cheatsheet {
-// 	title: string;
-// 	chapters: Chapter[];
-// 	sections: Section[];
-// }
-
 export interface Cheatsheet {
 	title: string;
 	markdown: string;
@@ -64,6 +58,7 @@ export interface Directory {
 	name: string;
 	path: string;
 	files: File[];
+	sub_directories: Directory[];
 }
 
 export interface FileChangedPayload {

@@ -9,6 +9,11 @@
 	position: relative;
 	height: fit-content;
 	overflow-x: auto;
+
+	/* Scrollbar */
+	--scrollbar-foreground: var(--theme-3);
+	--scrollbar-background: var(--theme-2);
+	scrollbar-color: var(--scrollbar-foreground) var(--scrollbar-background);
 }
 
 .mk-section div.mk-text-block:last-child {
@@ -16,9 +21,21 @@
 	border-bottom-right-radius: 4px;
 }
 
+/* Targetted scrollbar customizations */
+.mk-section::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+.mk-section::-webkit-scrollbar-thumb {
+	background: var(--scrollbar-foreground);
+}
+.mk-section::-webkit-scrollbar-track {
+	background: var(--scrollbar-background);
+}
+
 .mk-h3 {
-	font-size: 1.1rem;
-	font-weight: 200;
+	font-size: 1.2rem;
+	font-weight: 400;
 	text-decoration: underline;
 	text-underline-offset: 8px;
 	padding-top: 8px;

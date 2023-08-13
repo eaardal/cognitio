@@ -150,7 +150,7 @@ a {
 	text-decoration: none;
 }
 a:hover {
-	font-weight: 600;
+	text-decoration: underline;
 }
 a:visited {
 	color: var(--secondary);
@@ -164,6 +164,7 @@ li {
 	padding-inline-start: 4px;
 	list-style-position: inside;
 	margin: 0;
+	line-height: 1.7em;
 }
 
 h1,

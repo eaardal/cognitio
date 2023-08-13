@@ -91,10 +91,25 @@
 		<h2>{name}</h2>
 		<button class="edit-btn" on:click={onEditCheatsheetClick}>Edit</button>
 	</div>
+	<div class="section-shortcuts">
+		{#each Object.keys(cheatsheet) as sectionName}
+			<a href={`#${sectionName}`}>{sectionName}</a>
+		{/each}
+	</div>
 	<div class="content">
 		{#each Object.keys(cheatsheet) as sectionName}
 			<div class="section-root">
-				<h3 class="section-title">{sectionName}</h3>
+				<!-- svelte-ignore a11y-missing-content -->
+				<a id={sectionName} />
+
+				<h3 class="section-title">
+					{sectionName}<button
+						class="go-to-top-btn"
+						on:click={() => {
+							window.scrollTo({ top: 0, behavior: 'smooth' });
+						}}>Top</button
+					>
+				</h3>
 
 				<!-- eslint-disable svelte/no-at-html-tags -->
 				<div class="cheatsheet-html-root">{@html cheatsheet[sectionName]}</div>
@@ -128,6 +143,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		z-index: 1;
+		box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.3);
 	}
 
 	.header > h2 {
@@ -135,6 +152,51 @@
 		margin: 0;
 		padding: 0;
 		color: var(--theme-3);
+	}
+
+	.section-title {
+		display: flex;
+		align-items: center;
+	}
+
+	.go-to-top-btn {
+		display: inline-block;
+		border: none;
+		padding: 2px 4px;
+		margin: 0;
+		text-decoration: none;
+		background: var(--foreground);
+		color: var(--accent);
+		font-family: sans-serif;
+		font-size: 0.8rem;
+		cursor: pointer;
+		text-align: center;
+		transition: background 250ms ease-in-out, transform 150ms ease;
+		border-radius: 4px;
+		margin-left: 16px;
+	}
+
+	.go-to-top-btn:hover,
+	.go-to-top-btn:focus {
+		background: var(--foreground-lighter);
+	}
+
+	.section-shortcuts {
+		--padding-sides: 24px;
+		background-color: color-mix(in srgb, var(--background) 95%, var(--white));
+		width: calc(100%-var(--padding-sides));
+		max-height: 100px;
+		padding-left: var(--padding-sides);
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		padding-top: 8px;
+		padding-bottom: 8px;
+		box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.3);
+	}
+
+	.section-shortcuts > a {
+		margin-right: 16px;
 	}
 
 	.content {

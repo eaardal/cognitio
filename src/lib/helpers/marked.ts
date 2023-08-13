@@ -2,7 +2,6 @@ import 'highlight.js/styles/github-dark.css';
 import { marked } from 'marked';
 import { markedHighlight } from 'marked-highlight';
 import hljs from 'highlight.js';
-import { open } from '@tauri-apps/api/shell';
 import { patchHtmlWithMkTextBlockDivs } from './patchHtml';
 
 // Enable syntax highlighting

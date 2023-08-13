@@ -20,20 +20,32 @@
 <div class="menu">
 	<ul class="menu-list">
 		{#each directories as directory}
-			<div class="menu-section">
-				{#if directory.sub_directories.length > 0 && directory.files.length === 0}
-					<Tooltip text={directory.path}>
-						<li class="menu-item root-directory">
-							<div>{directory.name}</div>
-						</li>
-					</Tooltip>
-					{#each directory.sub_directories as subDirectory}
-						<li class="menu-item" class:active={activeDirectory?.path === subDirectory.path}>
-							<a href="#." on:click={onMenuItemClick(subDirectory)}>{subDirectory.name}</a>
-						</li>
-					{/each}
-				{/if}
-			</div>
+			{#if directories.length === 1}
+				<div class="menu-section">
+					{#if directory.sub_directories.length > 0 && directory.files.length === 0}
+						{#each directory.sub_directories as subDirectory}
+							<li class="menu-item" class:active={activeDirectory?.path === subDirectory.path}>
+								<a href="#." on:click={onMenuItemClick(subDirectory)}>{subDirectory.name}</a>
+							</li>
+						{/each}
+					{/if}
+				</div>
+			{:else}
+				<div class="menu-section">
+					{#if directory.sub_directories.length > 0 && directory.files.length === 0}
+						<Tooltip text={directory.path}>
+							<li class="menu-item root-directory">
+								<div>{directory.name}</div>
+							</li>
+						</Tooltip>
+						{#each directory.sub_directories as subDirectory}
+							<li class="menu-item" class:active={activeDirectory?.path === subDirectory.path}>
+								<a href="#." on:click={onMenuItemClick(subDirectory)}>{subDirectory.name}</a>
+							</li>
+						{/each}
+					{/if}
+				</div>
+			{/if}
 		{/each}
 	</ul>
 	<div class="bottom">
@@ -49,6 +61,7 @@
 		width: 200px;
 		display: flex;
 		flex-direction: column;
+		z-index: 1;
 	}
 
 	.menu-list {

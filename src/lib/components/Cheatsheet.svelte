@@ -115,7 +115,9 @@
 				<div class="cheatsheet-html-root">{@html cheatsheet[sectionName]}</div>
 				<!-- eslint-enable -->
 
-				<hr class="section-end" />
+				{#if Object.keys(cheatsheet).length > 1}
+					<hr class="section-end" />
+				{/if}
 			</div>
 		{/each}
 	</div>

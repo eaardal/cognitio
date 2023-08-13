@@ -68,7 +68,7 @@
 
 .mk-inline-code {
 	background-color: var(--foreground-lighter);
-	padding: 4px 8px;
+	padding: 2px 4px;
 	border-radius: 4px;
 	font-family: monospace;
 	font-size: 0.9rem;

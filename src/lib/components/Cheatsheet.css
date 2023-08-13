@@ -8,6 +8,7 @@
 	border-radius: 4px;
 	position: relative;
 	height: fit-content;
+	overflow-x: auto;
 }
 
 .mk-section div.mk-text-block:last-child {

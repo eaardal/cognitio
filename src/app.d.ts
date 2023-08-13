@@ -7,6 +7,10 @@ declare global {
 		// interface PageData {}
 		// interface Platform {}
 	}
+
+	interface Window {
+		__OPEN_LINK__: (path: string, openWith?: string) => Promise<void>;
+	}
 }
 
 export {};

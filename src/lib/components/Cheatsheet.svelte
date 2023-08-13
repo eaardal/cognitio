@@ -93,11 +93,15 @@
 	</div>
 	<div class="content">
 		{#each Object.keys(cheatsheet) as sectionName}
-			<h3 class="section-title">{sectionName}</h3>
+			<div class="section-root">
+				<h3 class="section-title">{sectionName}</h3>
 
-			<!-- eslint-disable svelte/no-at-html-tags -->
-			<div class="cheatsheet-html-root">{@html cheatsheet[sectionName]}</div>
-			<!-- eslint-enable -->
+				<!-- eslint-disable svelte/no-at-html-tags -->
+				<div class="cheatsheet-html-root">{@html cheatsheet[sectionName]}</div>
+				<!-- eslint-enable -->
+
+				<hr class="section-end" />
+			</div>
 		{/each}
 	</div>
 </div>
@@ -135,6 +139,21 @@
 
 	.content {
 		margin-left: 24px;
+	}
+
+	.section-root {
+		margin-bottom: 40px;
+	}
+
+	.section-end {
+		margin-top: 32px;
+		border-color: color-mix(in srgb, var(--background) 80%, var(--white));
+		color: color-mix(in srgb, var(--background) 80%, var(--white));
+		display: block;
+		height: 1px;
+		border: 0;
+		border-top: 1px solid color-mix(in srgb, var(--background) 80%, var(--white));
+		padding: 0;
 	}
 
 	.edit-btn {

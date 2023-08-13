@@ -94,7 +94,10 @@
 	<div class="content">
 		{#each Object.keys(cheatsheet) as sectionName}
 			<h3 class="section-title">{sectionName}</h3>
+
+			<!-- eslint-disable svelte/no-at-html-tags -->
 			<div class="cheatsheet-html-root">{@html cheatsheet[sectionName]}</div>
+			<!-- eslint-enable -->
 		{/each}
 	</div>
 </div>

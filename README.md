@@ -30,6 +30,8 @@ Build distributable:
 npm run tauri build
 ```
 
+Builds are then located under `./src-tauri/target/release/bundle`.
+
 ### Scaffolding used to create project:
 
 https://tauri.app/v1/guides/getting-started/setup/sveltekit

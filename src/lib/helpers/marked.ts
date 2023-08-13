@@ -71,7 +71,7 @@ const addCustomCssClassesToMarkdown = {
 	paragraph(text: string) {
 		return `<p class="mk-p">${text}</p>`;
 	},
-	code(code: string, language: string, escaped: boolean) {
+	code(code: string, language: string /*, escaped: boolean */) {
 		return `<code class="hljs language-${language}">${code}</code>`;
 	},
 	codespan(code: string) {

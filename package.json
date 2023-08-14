@@ -37,9 +37,11 @@
 	"type": "module",
 	"dependencies": {
 		"@tauri-apps/api": "^1.4.0",
+		"@types/lodash": "^4.14.197",
 		"@types/marked": "^5.0.1",
 		"dompurify": "^3.0.5",
 		"highlight.js": "^11.8.0",
+		"lodash": "^4.17.21",
 		"marked": "^5.1.2",
 		"marked-highlight": "^2.0.1"
 	}

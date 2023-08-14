@@ -97,7 +97,7 @@
 		{/each}
 	</div>
 	<div class="content">
-		{#each Object.keys(cheatsheet) as sectionName}
+		{#each Object.keys(cheatsheet) as sectionName, index}
 			<div class="section-root">
 				<!-- svelte-ignore a11y-missing-content -->
 				<a id={sectionName} />
@@ -115,7 +115,7 @@
 				<div class="cheatsheet-html-root">{@html cheatsheet[sectionName]}</div>
 				<!-- eslint-enable -->
 
-				{#if Object.keys(cheatsheet).length > 1}
+				{#if Object.keys(cheatsheet).length > 1 && index !== Object.keys(cheatsheet).length - 1}
 					<hr class="section-end" />
 				{/if}
 			</div>
@@ -203,6 +203,7 @@
 
 	.content {
 		margin-left: 24px;
+		margin-right: 24px;
 	}
 
 	.section-root {

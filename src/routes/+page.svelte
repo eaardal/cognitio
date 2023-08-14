@@ -4,6 +4,7 @@
 	import { listen } from '@tauri-apps/api/event';
 	import type { Event, UnlistenFn } from '@tauri-apps/api/event';
 	import dompurify from 'dompurify';
+	import orderBy from 'lodash/orderBy';
 	import { marked } from '$lib/helpers/marked';
 	import Cheatsheet from '$lib/components/Cheatsheet.svelte';
 	import Menu from '$lib/components/Menu.svelte';
@@ -54,11 +55,19 @@
 		return directoryToLoad;
 	}
 
+	function orderAllDirectoriesByName(directories: Directory[]): Directory[] {
+		const orderedDirectories = orderBy(directories, ['name'], ['asc']);
+		for (const dir of orderedDirectories) {
+			dir.sub_directories = orderBy(dir.sub_directories, ['name'], ['asc']);
+		}
+		return orderedDirectories;
+	}
+
 	function loadCheatsheetDirectories() {
 		invoke('list_cheatsheet_directories')
 			.then((value) => {
-				cheatsheetDirectories = value as Directory[];
-				return value as Directory[];
+				cheatsheetDirectories = orderAllDirectoriesByName(value as Directory[]);
+				return cheatsheetDirectories;
 			})
 			.then((directories) => {
 				const directoryToLoad = findFirstDirectoryWithCheatsheets(directories);
@@ -102,8 +111,6 @@
 			sub();
 		}
 	});
-
-	console.log('currentCheatsheet', currentCheatsheet);
 </script>
 
 <div class="page-root">

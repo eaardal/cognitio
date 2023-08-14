@@ -39,3 +39,7 @@ https://tauri.app/v1/guides/getting-started/setup/sveltekit
 - With TypeScript.
 - With Prettier and ESLint.
 - With Vitest for testing but without browser testing.
+
+# TODO:
+
+https://rust-lang-nursery.github.io/rust-cookbook/development_tools/debugging/config_log.html#log-messages-to-a-custom-location

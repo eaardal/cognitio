@@ -4,7 +4,11 @@ Developer cheatsheets and code snippets via Markdown.
 
 ![overview](./docs/img/overview.png)
 
-Status: Alpha, with known bugs.
+The purpose of this project is to write and maintain code snippets, cheatsheets and other developer notes in plain markdown, while viewing, looking up and browsing the content in a more delightful UI.
+
+It also supports multiple sources of cheatsheets, making it easy for your team members or other people to make their snippets available, for example in GitHub, and importing those into your library.
+
+:warning: Status: Alpha, with known bugs.
 
 ### Known bugs
 
@@ -12,6 +16,7 @@ Status: Alpha, with known bugs.
 - The edit button in the upper right hand corner doesn't work, same situation as above.
 - Detecting file changes and automatically reloading cheatsheets seems flaky when the app is built for distribution but works fine during development.
 - No view/inapropriate view when there are no entries in the `cheatsheets` list (in `cognitio.yaml`).
+- Some cards are very wide if lines are very long, responsiveness needs adjustments.
 
 ## How to get started
 
@@ -26,7 +31,7 @@ cheatsheets:
 ```
 
 - `editor` is the command to invoke when the "Edit" or "Edit Cognitio Config" buttons are used. In the example above, Visual Studio Code is used (similar to using `code .` on the terminal).
-- `cheatsheets` is a list of paths to where your snippets or cheatsheets are stored.
+- `cheatsheets` is a list of paths to where your snippets or cheatsheets are stored (mine can be found [here](https://github.com/eaardal/cheatsheets-and-snippets)).
 
 2. Set the `COGNITIO_HOME` environment variable to be the path to the directory where `cognitio.yaml` is stored.
 

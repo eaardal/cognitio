@@ -61,6 +61,12 @@ Show browser dev tools in running app:
 CMD+OPT+I
 ```
 
+Build distributables (MacOS for now):
+
+```
+make build
+```
+
 ### Misc
 
 Generate app icon:

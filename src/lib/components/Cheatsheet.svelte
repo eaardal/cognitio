@@ -67,9 +67,12 @@
 					return;
 				}
 
+				// Styling here must match up with base styling for .mk-code-boundary in Cheatsheet.css
 				target.style.backgroundColor = codeBgOnCopyHover;
 				target.style.borderStyle = 'dashed';
 				target.style.borderWidth = '1px';
+				target.style.borderColor = '#edded8';
+				target.style.width = 'calc(100% - 2px)'; // Allow space for border without causing a horizontal scrollbar
 			});
 
 			button.addEventListener('mouseout', () => {
@@ -78,9 +81,12 @@
 					return;
 				}
 
+				// Styling here must match up with base styling for .mk-code-boundary in Cheatsheet.css
 				target.style.backgroundColor = codeBgDefault;
-				target.style.borderStyle = 'none';
-				target.style.borderWidth = '0';
+				target.style.borderStyle = 'solid';
+				target.style.borderWidth = '1px';
+				target.style.borderColor = 'color(srgb 0.20666668 0.16745098 0.3482353)'; // matches var(--background-lighter)
+				target.style.width = 'calc(100%-2px)'; // Allow space for border without causing a horizontal scrollbar
 			});
 		});
 	});

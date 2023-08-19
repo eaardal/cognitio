@@ -1,3 +1,4 @@
+// Generate a 6 character string of random letters and numbers we can use as a unique ID.
 function generateRandomText(): string {
 	const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 	let result = '';
@@ -63,6 +64,28 @@ function walkForwards(preTags: NodeListOf<HTMLPreElement>, doc: Document) {
 	});
 }
 
+function makeCodeBoundaryDiv(doc: Document, id: string): HTMLDivElement {
+	const codeBoundaryDiv = doc.createElement('div');
+	codeBoundaryDiv.id = `mk-code-boundary-${id}`;
+	codeBoundaryDiv.className = 'mk-code-boundary';
+	return codeBoundaryDiv;
+}
+
+function makeCopyButton(doc: Document, id: string): HTMLInputElement {
+	const copybtn = doc.createElement('input');
+	copybtn.id = `mk-copy-btn-${id}`;
+	copybtn.className = 'mk-copy-btn';
+	copybtn.type = 'button';
+	copybtn.value = 'Copy';
+	return copybtn;
+}
+
+function makeCodeBlockDiv(doc: Document): HTMLDivElement {
+	const codeBlockDiv = doc.createElement('div');
+	codeBlockDiv.className = 'mk-code-block';
+	return codeBlockDiv;
+}
+
 /**
  * To make each cheatsheet section as easy to read as possible, we want to wrap
  * all content like <p> and <li> tags in divs that we can target with styling:
@@ -82,7 +105,7 @@ function walkForwards(preTags: NodeListOf<HTMLPreElement>, doc: Document) {
  * once the markdown has been processed to HTML and manipulate the final HTML ourselves to wrap
  * the content we want in mk-text-block divs.
  *
- * patchHtmlWithMkTextBlockDivs ptakes care of this mess...
+ * patchHtmlWithMkTextBlockDivs takes care of this mess...
  */
 export function patchHtmlWithMkTextBlockDivs(html: string) {
 	const parser = new DOMParser();
@@ -121,38 +144,39 @@ export function patchHtmlWithMkTextBlockDivs(html: string) {
 	// <pre>
 	//   <code>...code example</code>
 	// </pre>
-
+	//
 	// <pre> tags acts as stop-points. mk-text-block divs should end directly before <pre> tags or start directly after them.
+
 	// Find all the <pre> tags in the document:
 	const preTags = doc.querySelectorAll('pre');
 
+	// From each <pre> tag, walk backwards and insert necessary divs with the .mk-text-block class.
 	walkBackwards(preTags, doc);
+
+	// Then walk forwards and do the same.
 	walkForwards(preTags, doc);
 
 	preTags.forEach((pre) => {
-		const rnd = generateRandomText();
+		const elementId = generateRandomText();
 
+		// Ensure that all <pre> tags has a .mk-pre class we can target with styling (see Cheatsheet.css).
 		pre.classList.add('mk-pre');
-		pre.id = `mk-pre-${rnd}`;
+		// We need to know which <pre> tag we're dealing with when we want to copy the code to the clipboard, so make sure a random ID for this particular <pre> is part of its ID.
+		pre.id = `mk-pre-${elementId}`;
 
-		const codeBlockDiv = doc.createElement('div');
+		// Wrap the <pre> tag in a new div with class "mk-code-block" so we can target it with styling and position it correctly.
+		const codeBlockDiv = makeCodeBlockDiv(doc);
 		codeBlockDiv.className = 'mk-code-block';
 
 		pre.parentNode?.insertBefore(codeBlockDiv, pre);
 
-		const codeBoundaryDiv = doc.createElement('div');
-		codeBoundaryDiv.id = `mk-code-boundary-${rnd}`;
-		codeBoundaryDiv.className = 'mk-code-boundary';
+		// Insert a new div with class "mk-code-boundary" before the <pre> tag, but inside the mk-code-block div.
+		const codeBoundaryDiv = makeCodeBoundaryDiv(doc, elementId);
 		codeBoundaryDiv.appendChild(pre);
-
 		codeBlockDiv.appendChild(codeBoundaryDiv);
 
-		const copybtn = doc.createElement('input');
-		copybtn.id = `mk-copy-btn-${rnd}`;
-		copybtn.className = 'mk-copy-btn';
-		copybtn.type = 'button';
-		copybtn.value = 'Copy';
-
+		// Add a <button> with class "mk-copy-btn" that we later can use to copy the code to the clipboard. This is part of the mk-code-boundary div.
+		const copybtn = makeCopyButton(doc, elementId);
 		codeBlockDiv.appendChild(copybtn);
 	});
 

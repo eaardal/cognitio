@@ -7,8 +7,8 @@
 		"distDir": "../build"
 	},
 	"package": {
-		"productName": "cognitio",
-		"version": "0.1.0"
+		"productName": "Cognitio",
+		"version": "0.1.2"
 	},
 	"tauri": {
 		"allowlist": {

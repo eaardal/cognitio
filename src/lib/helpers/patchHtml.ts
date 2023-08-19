@@ -86,6 +86,27 @@ function makeCodeBlockDiv(doc: Document): HTMLDivElement {
 	return codeBlockDiv;
 }
 
+function ensureNoMkTextBlockSiblings(doc: Document) {
+	const textBlocks = doc.querySelectorAll('.mk-text-block');
+	const textBlocksArray = Array.from(textBlocks);
+
+	function isParent(element: Element, potentialParent: Element) {
+		return element.contains(potentialParent);
+	}
+
+	textBlocksArray.forEach((textBlock, index) => {
+		// Check if it has a parent with class mk-text-block
+		const mkTextBlockParent = textBlocksArray.find(
+			(tb, i) => i !== index && isParent(tb, textBlock)
+		);
+
+		if (mkTextBlockParent) {
+			// If it has such a parent, lift the child up and replace the parent
+			mkTextBlockParent.parentNode?.replaceChild(textBlock, mkTextBlockParent);
+		}
+	});
+}
+
 /**
  * To make each cheatsheet section as easy to read as possible, we want to wrap
  * all content like <p> and <li> tags in divs that we can target with styling:
@@ -179,6 +200,8 @@ export function patchHtmlWithMkTextBlockDivs(html: string) {
 		const copybtn = makeCopyButton(doc, elementId);
 		codeBlockDiv.appendChild(copybtn);
 	});
+
+	ensureNoMkTextBlockSiblings(doc);
 
 	// Serialize the updated document back to an HTML string
 	return new XMLSerializer().serializeToString(doc);

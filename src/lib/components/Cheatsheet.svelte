@@ -2,6 +2,8 @@
 	import { afterUpdate, createEventDispatcher } from 'svelte';
 	import '$lib/components/Cheatsheet.css';
 	import { addEventHandlersToCopyButtons } from '$lib/helpers/copyButton';
+	import SectionHeader from './SectionHeader.svelte';
+	import MarkdownContent from './MarkdownContent.svelte';
 
 	export let cheatsheet: Record<string, string>;
 	export let name: string;
@@ -13,9 +15,9 @@
 		dispatch('edit-directory', { path, name });
 	}
 
-	function onEditFileClick(fileNameWithoutExt: string) {
-		const filePath = `${path}/${fileNameWithoutExt}.md`;
-		dispatch('edit-file', { path: filePath, name: fileNameWithoutExt });
+	function onEditFileClick(event: CustomEvent<{ name: string }>) {
+		const filePath = `${path}/${event.detail.name}.md`;
+		dispatch('edit-file', { path: filePath, name: event.detail.name });
 	}
 
 	afterUpdate(() => {
@@ -36,22 +38,8 @@
 	<div class="content">
 		{#each Object.keys(cheatsheet) as sectionName, index}
 			<div class="section-root">
-				<!-- svelte-ignore a11y-missing-content -->
-				<a id={sectionName} />
-
-				<h3 class="section-title">
-					{sectionName}<button
-						class="go-to-top-btn"
-						on:click={() => {
-							window.scrollTo({ top: 0, behavior: 'smooth' });
-						}}>Top</button
-					>
-					<button class="edit-btn" on:click={() => onEditFileClick(sectionName)}>Edit</button>
-				</h3>
-
-				<!-- eslint-disable svelte/no-at-html-tags -->
-				<div class="cheatsheet-html-root">{@html cheatsheet[sectionName]}</div>
-				<!-- eslint-enable -->
+				<SectionHeader name={sectionName} on:edit-click={onEditFileClick} />
+				<MarkdownContent markdown={cheatsheet[sectionName]} />
 
 				{#if Object.keys(cheatsheet).length > 1 && index !== Object.keys(cheatsheet).length - 1}
 					<hr class="section-end" />
@@ -65,12 +53,6 @@
 	.cheatsheet {
 		display: flex;
 		flex-direction: column;
-	}
-
-	.cheatsheet-html-root {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 16px;
 	}
 
 	.header {
@@ -91,33 +73,6 @@
 		margin: 0;
 		padding: 0;
 		color: var(--theme-3);
-	}
-
-	.section-title {
-		display: flex;
-		align-items: center;
-	}
-
-	.go-to-top-btn {
-		display: inline-block;
-		border: none;
-		padding: 2px 4px;
-		margin: 0;
-		text-decoration: none;
-		background: var(--foreground);
-		color: var(--accent);
-		font-family: 'REM';
-		font-size: 0.8rem;
-		cursor: pointer;
-		text-align: center;
-		transition: background 250ms ease-in-out, transform 150ms ease;
-		border-radius: 4px;
-		margin-left: 16px;
-	}
-
-	.go-to-top-btn:hover,
-	.go-to-top-btn:focus {
-		background: var(--foreground-lighter);
 	}
 
 	.section-shortcuts {

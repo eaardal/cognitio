@@ -1,9 +1,12 @@
 <script lang="ts">
-	export let text = '';
+	export let content = '';
+	export let top = '100%';
+	export let left = '0';
+	export let right = '0';
 </script>
 
 <div class="tooltip-container">
-	<span class="tooltip">{text}</span>
+	<span class="tooltip" style="top: {top}; left: {left}; right: {right}">{content}</span>
 	<slot />
 </div>
 
@@ -17,11 +20,10 @@
 	.tooltip {
 		display: none;
 		position: absolute;
-		top: 100%;
-		left: 300%;
-		transform: translateX(-50%);
 		padding: 8px;
 		background-color: #333;
+		width: fit-content;
+		transform: translateX(0%);
 		color: #fff;
 		border-radius: 4px;
 		font-size: 0.8em;

@@ -90,7 +90,7 @@
 	--theme-4: #be95c4;
 	--theme-5: #e0b1cb;
 
-	/* Theme adoption to UI layers */
+	/* Theme adaption to UI layers */
 	--background: var(--theme-1);
 	--foreground: var(--theme-2);
 	--primary: var(--theme-4);

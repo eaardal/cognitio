@@ -1,5 +1,4 @@
-const codeBgOnCopyHover = '#584796';
-const codeBgDefault = 'transparent';
+import { backgroundLighter } from '$lib/styles';
 
 function getLastPartSeparatedByDash(inputString: string): string {
 	const parts = inputString.split('-');
@@ -52,7 +51,7 @@ function onMouseOver(button: Element) {
 		}
 
 		// Styling here must match up with base styling for .mk-code-boundary in Cheatsheet.css
-		target.style.backgroundColor = codeBgOnCopyHover;
+		target.style.backgroundColor = backgroundLighter;
 		target.style.borderStyle = 'dashed';
 		target.style.borderWidth = '1px';
 		target.style.borderColor = '#edded8';
@@ -68,7 +67,7 @@ function onMouseOut(button: Element) {
 		}
 
 		// Styling here must match up with base styling for .mk-code-boundary in Cheatsheet.css
-		target.style.backgroundColor = codeBgDefault;
+		target.style.backgroundColor = 'transparent';
 		target.style.borderStyle = 'solid';
 		target.style.borderWidth = '1px';
 		target.style.borderColor = 'color(srgb 0.20666668 0.16745098 0.3482353)'; // matches var(--background-lighter)

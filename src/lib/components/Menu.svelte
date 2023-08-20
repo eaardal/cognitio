@@ -36,7 +36,7 @@
 			{:else}
 				<div class="menu-section">
 					{#if directory.sub_directories.length > 0 && directory.files.length === 0}
-						<Tooltip text={directory.path}>
+						<Tooltip content={directory.path}>
 							<li class="menu-item root-directory">
 								<div>{directory.name}</div>
 							</li>

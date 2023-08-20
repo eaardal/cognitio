@@ -19,6 +19,9 @@
 
 <div class="menu">
 	<ul class="menu-list">
+		{#if directories.length === 0}
+			<p>Nothing to show</p>
+		{/if}
 		{#each directories as directory}
 			{#if directories.length === 1}
 				<div class="menu-section">

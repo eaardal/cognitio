@@ -1,7 +1,13 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use log::LevelFilter;
 use log::{error, info};
+use log4rs;
+use log4rs::append::console::ConsoleAppender;
+use log4rs::append::file::FileAppender;
+use log4rs::config::{Appender, Config as Log4rsConfig, Root};
+use log4rs::encode::pattern::PatternEncoder;
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::Deserialize;
 use serde::Serialize;
@@ -11,8 +17,6 @@ use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::Read;
-use std::io::Result;
-use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::mpsc::channel;
@@ -47,23 +51,47 @@ struct CognitioConfig {
 }
 
 fn main() {
-    let home = cognitio_home_dir();
-    let log_file_path = PathBuf::from(home).join("log.txt");
-    let mut log_file = File::create(log_file_path).unwrap();
-    // let mut log_file_ref = &log_file;
+    setup_logger();
 
-    env_logger::Builder::new()
-        .target(env_logger::Target::Pipe(Box::new(
-            log_file.try_clone().unwrap(),
-        )))
-        .init();
-
-    run_tauri();
-
-    log_file.flush().unwrap();
+    if let Err(error) = run_tauri() {
+        error!("Application error: {error:?}");
+    }
 }
 
-fn run_tauri() {
+fn setup_logger() {
+    let home = cognitio_home_dir();
+    let log_path = PathBuf::from(home).join("cognitio.log");
+
+    let encoder = PatternEncoder::new("{h({d(%Y-%m-%d %H:%M:%S)(utc)} - {l}: {m}{n})}");
+
+    let stdout_appender = ConsoleAppender::builder()
+        .encoder(Box::new(encoder.clone()))
+        .build();
+
+    let file_appender = FileAppender::builder()
+        .encoder(Box::new(encoder.clone()))
+        .build(log_path)
+        .unwrap();
+
+    let root = Root::builder()
+        .appender("stdout_logger")
+        .appender("file_logger")
+        .build(LevelFilter::Debug);
+
+    let config = Log4rsConfig::builder()
+        .appender(Appender::builder().build("stdout_logger", Box::new(stdout_appender)))
+        .appender(Appender::builder().build("file_logger", Box::new(file_appender)))
+        .build(root)
+        .unwrap();
+
+    log4rs::init_config(config).unwrap();
+}
+
+fn run_tauri() -> Result<(), tauri::Error> {
+    if let Err(error) = fix_path_env::fix() {
+        error!("Failed to fix PATH environment variable: {error:?}")
+    }
+
     let (sender, receiver) = channel::<String>();
     let cheatsheet_sender = sender.clone();
     let home_dir_sender = sender.clone();
@@ -72,7 +100,8 @@ fn run_tauri() {
         .invoke_handler(tauri::generate_handler![
             load_cheatsheet,
             list_cheatsheet_directories,
-            edit_cheatsheet,
+            edit_directory,
+            edit_file,
             edit_cognitio_config
         ])
         .setup(|app| {
@@ -83,29 +112,66 @@ fn run_tauri() {
             Ok(())
         })
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
 }
 
 #[tauri::command]
-fn edit_cognitio_config() {
+fn edit_cognitio_config() -> Result<String, tauri::Error> {
     let home = cognitio_home_dir();
     let yaml_path = PathBuf::from(home).join("cognitio.yaml");
     let conf = read_cognitio_yaml().unwrap();
     let editor = conf.editor;
-    let _output = std::process::Command::new(editor)
-        .arg(yaml_path)
-        .output()
-        .expect("failed to execute process");
+
+    let cmd_output = std::process::Command::new(editor)
+        .arg(yaml_path.clone())
+        .output();
+
+    match cmd_output {
+        Ok(output) => Ok(String::from_utf8(output.stdout).unwrap()),
+        Err(error) => {
+            error!(
+                "Failed to edit Cognitio config {}: {:?}",
+                yaml_path.clone().to_str().unwrap(),
+                error
+            );
+            Err(tauri::Error::from(error))
+        }
+    }
 }
 
 #[tauri::command]
-fn edit_cheatsheet(path: String) {
+fn edit_directory(path: String) -> Result<String, tauri::Error> {
     let conf = read_cognitio_yaml().unwrap();
     let editor = conf.editor;
-    let _output = std::process::Command::new(editor)
-        .arg(path)
-        .output()
-        .expect("failed to execute process");
+
+    let cmd_output = std::process::Command::new(editor)
+        .arg(path.clone())
+        .output();
+
+    match cmd_output {
+        Ok(output) => Ok(String::from_utf8(output.stdout).unwrap()),
+        Err(error) => {
+            error!("Failed to edit directory {}: {:?}", path.clone(), error);
+            Err(tauri::Error::from(error))
+        }
+    }
+}
+
+#[tauri::command]
+fn edit_file(path: String) -> Result<String, tauri::Error> {
+    let conf = read_cognitio_yaml().unwrap();
+    let editor = conf.editor;
+
+    let cmd_output = std::process::Command::new(editor)
+        .arg(path.clone())
+        .output();
+
+    match cmd_output {
+        Ok(output) => Ok(String::from_utf8(output.stdout).unwrap()),
+        Err(error) => {
+            error!("Failed to edit file {}: {:?}", path.clone(), error);
+            Err(tauri::Error::from(error))
+        }
+    }
 }
 
 #[tauri::command]
@@ -134,11 +200,10 @@ fn list_cheatsheet_directories() -> Vec<Directory> {
                 .to_string(),
             path: String::from(cheatsheet_path),
             sub_directories: list_subdirectories(&cheatsheet_path),
-            files: Vec::new(), //list_files_in_directory(&cheatsheet_path),
+            files: Vec::new(),
         })
         .collect();
-    // println!("Cheatsheets: {:?}", serde_json::to_string(&res).unwrap());
-    info!("Cheatsheets: {:?}", serde_json::to_string(&res).unwrap());
+    // info!("Cheatsheets: {:?}", serde_json::to_string(&res).unwrap());
     res
 }
 
@@ -164,8 +229,8 @@ fn watch_cognitio_home_dir(on_file_changed: Sender<String>) {
 }
 
 async fn watch_dir(path: String, on_file_changed: Sender<String>) {
-    if let Err(error) = watch(path, on_file_changed) {
-        error!("Error: {error:?}");
+    if let Err(error) = watch(path.clone(), on_file_changed) {
+        error!("Watch {} error: {error:?}", path.to_string());
     }
 }
 
@@ -193,7 +258,7 @@ fn watch<P: AsRef<Path>>(path: P, on_file_changed: Sender<String>) -> notify::Re
     Ok(())
 }
 
-fn read_file_to_string(file_path: &str) -> Result<String> {
+fn read_file_to_string(file_path: &str) -> std::io::Result<String> {
     let mut file = File::open(file_path)?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
@@ -248,7 +313,7 @@ fn list_files_in_directory(directory_path: &str) -> Vec<DirectoryFile> {
     files
 }
 
-fn read_cognitio_yaml() -> Result<CognitioConfig> {
+fn read_cognitio_yaml() -> std::io::Result<CognitioConfig> {
     let home = cognitio_home_dir();
     let yaml_path = PathBuf::from(home).join("cognitio.yaml");
     let mut file = File::open(yaml_path)?;

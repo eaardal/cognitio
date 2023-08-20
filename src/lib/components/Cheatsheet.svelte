@@ -1,101 +1,32 @@
 <script lang="ts">
 	import { afterUpdate, createEventDispatcher } from 'svelte';
 	import '$lib/components/Cheatsheet.css';
+	import { addEventHandlersToCopyButtons } from '$lib/helpers/copyButton';
 
 	export let cheatsheet: Record<string, string>;
 	export let name: string;
 	export let path: string;
 
-	const codeBgOnCopyHover = '#584796';
-	const codeBgDefault = 'transparent';
-
 	const dispatch = createEventDispatcher();
 
-	function onEditCheatsheetClick() {
-		dispatch('edit-cheatsheet', { path, name });
+	function onEditDirectoryClick() {
+		dispatch('edit-directory', { path, name });
 	}
 
-	function getLastPartSeparatedByDash(inputString: string): string {
-		const parts = inputString.split('-');
-		return parts[parts.length - 1];
-	}
-
-	function findCodeBoundaryForCopyButton(btn: Element): HTMLElement | null {
-		const id = getLastPartSeparatedByDash(btn.id);
-		return document.getElementById(`mk-code-boundary-${id}`);
+	function onEditFileClick(fileNameWithoutExt: string) {
+		const filePath = `${path}/${fileNameWithoutExt}.md`;
+		dispatch('edit-file', { path: filePath, name: fileNameWithoutExt });
 	}
 
 	afterUpdate(() => {
-		const buttons = document.querySelectorAll('.mk-copy-btn');
-		buttons.forEach((button) => {
-			button.addEventListener('click', (ev) => {
-				const target = ev.target as HTMLButtonElement;
-				if (!target) {
-					return;
-				}
-
-				const codeElems = target.parentElement?.querySelectorAll('code');
-
-				if (codeElems && codeElems.length > 0) {
-					const code = codeElems[0];
-					navigator.clipboard.writeText(code.innerText);
-
-					const codeBoundaryDiv = findCodeBoundaryForCopyButton(target);
-					if (codeBoundaryDiv) {
-						codeBoundaryDiv.style.backgroundColor = 'green';
-						codeBoundaryDiv.style.transitionProperty = 'background-color';
-						codeBoundaryDiv.style.transitionDuration = '500ms';
-						codeBoundaryDiv.style.transitionTimingFunction = 'cubic-bezier(0,1.5,0.5,1)';
-						codeBoundaryDiv.style.borderStyle = 'none';
-					}
-
-					setTimeout(() => {
-						const codeBoundaryDiv = findCodeBoundaryForCopyButton(target);
-						if (codeBoundaryDiv) {
-							codeBoundaryDiv.style.backgroundColor = '';
-							codeBoundaryDiv.style.transitionProperty = '';
-							codeBoundaryDiv.style.transitionDuration = '';
-							codeBoundaryDiv.style.transitionTimingFunction = '';
-						}
-					}, 500);
-				}
-			});
-
-			button.addEventListener('mouseover', () => {
-				const target = findCodeBoundaryForCopyButton(button);
-				if (!target) {
-					return;
-				}
-
-				// Styling here must match up with base styling for .mk-code-boundary in Cheatsheet.css
-				target.style.backgroundColor = codeBgOnCopyHover;
-				target.style.borderStyle = 'dashed';
-				target.style.borderWidth = '1px';
-				target.style.borderColor = '#edded8';
-				target.style.width = 'calc(100% - 2px)'; // Allow space for border without causing a horizontal scrollbar
-			});
-
-			button.addEventListener('mouseout', () => {
-				const target = findCodeBoundaryForCopyButton(button);
-				if (!target) {
-					return;
-				}
-
-				// Styling here must match up with base styling for .mk-code-boundary in Cheatsheet.css
-				target.style.backgroundColor = codeBgDefault;
-				target.style.borderStyle = 'solid';
-				target.style.borderWidth = '1px';
-				target.style.borderColor = 'color(srgb 0.20666668 0.16745098 0.3482353)'; // matches var(--background-lighter)
-				target.style.width = 'calc(100%-2px)'; // Allow space for border without causing a horizontal scrollbar
-			});
-		});
+		addEventHandlersToCopyButtons();
 	});
 </script>
 
 <div class="cheatsheet">
 	<div class="header">
 		<h2>{name}</h2>
-		<button class="edit-btn" on:click={onEditCheatsheetClick}>Edit</button>
+		<button class="edit-btn" on:click={onEditDirectoryClick}>Edit</button>
 	</div>
 	<div class="section-shortcuts">
 		{#each Object.keys(cheatsheet) as sectionName}
@@ -115,6 +46,7 @@
 							window.scrollTo({ top: 0, behavior: 'smooth' });
 						}}>Top</button
 					>
+					<button class="edit-btn" on:click={() => onEditFileClick(sectionName)}>Edit</button>
 				</h3>
 
 				<!-- eslint-disable svelte/no-at-html-tags -->
@@ -150,7 +82,6 @@
 		padding-right: var(--padding-sides);
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
 		z-index: 1;
 		box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.3);
 	}
@@ -175,7 +106,7 @@
 		text-decoration: none;
 		background: var(--foreground);
 		color: var(--accent);
-		font-family: sans-serif;
+		font-family: 'REM';
 		font-size: 0.8rem;
 		cursor: pointer;
 		text-align: center;

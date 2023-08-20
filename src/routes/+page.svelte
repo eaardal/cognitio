@@ -1,7 +1,5 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { invoke } from '@tauri-apps/api/tauri';
-	import { listen } from '@tauri-apps/api/event';
 	import type { Event, UnlistenFn } from '@tauri-apps/api/event';
 	import dompurify from 'dompurify';
 	import orderBy from 'lodash/orderBy';
@@ -9,30 +7,41 @@
 	import Cheatsheet from '$lib/components/Cheatsheet.svelte';
 	import Menu from '$lib/components/Menu.svelte';
 	import type { Directory, File, FileChangedPayload } from '$lib/models';
+	import {
+		invokeEditCognitioConfigCommand,
+		invokeEditDirectoryCommand,
+		invokeEditFileCommand,
+		invokeLoadCheatsheetCommand,
+		invokeLoadCheatsheetDirectoriesCommand,
+		listenForFileChangedEvents
+	} from '$lib/helpers/tauri';
 
 	let cheatsheetDirectories: Directory[];
+	$: cheatsheetDirectories = [];
+
 	let currentDirectory: Directory | undefined;
+	$: currentDirectory = undefined;
+
 	let currentCheatsheet: Record<string, string> | undefined;
+	$: currentCheatsheet = undefined;
+
 	let subscriptions: UnlistenFn[] = [];
 
-	function loadCheatsheet(files: File[]) {
-		invoke('load_cheatsheet', { files })
-			.then((value) => {
-				console.log('load_cheatsheet', value);
-				const rawCheatsheet = value as Record<string, string>;
+	async function loadCheatsheet(files: File[]) {
+		try {
+			const rawCheatsheet = await invokeLoadCheatsheetCommand(files);
 
-				const cheatsheet = Object.keys(rawCheatsheet).reduce((all, key) => {
-					const markdown = rawCheatsheet[key] as string;
-					const sanitizedMarkdown = dompurify.sanitize(markdown);
-					const html = marked.parse(sanitizedMarkdown);
-					return html ? { ...all, [key]: html } : all;
-				}, {} as Record<string, string>);
+			const cheatsheet = Object.keys(rawCheatsheet).reduce((all, key) => {
+				const markdown = rawCheatsheet[key] as string;
+				const sanitizedMarkdown = dompurify.sanitize(markdown);
+				const html = marked.parse(sanitizedMarkdown);
+				return html ? { ...all, [key]: html } : all;
+			}, {} as Record<string, string>);
 
-				currentCheatsheet = cheatsheet;
-			})
-			.catch((e) => {
-				console.error(e);
-			});
+			currentCheatsheet = cheatsheet;
+		} catch (error) {
+			console.error('Failed to load cheatsheet', error);
+		}
 	}
 
 	function findFirstDirectoryWithCheatsheets(directories: Directory[]): Directory | undefined {
@@ -63,78 +72,108 @@
 		return orderedDirectories;
 	}
 
-	function loadCheatsheetDirectories() {
-		invoke('list_cheatsheet_directories')
-			.then((value) => {
-				cheatsheetDirectories = orderAllDirectoriesByName(value as Directory[]);
-				return cheatsheetDirectories;
-			})
-			.then((directories) => {
-				const directoryToLoad = findFirstDirectoryWithCheatsheets(directories);
-				if (directoryToLoad && directoryToLoad?.files.length > 0) {
-					currentDirectory = directoryToLoad;
-					loadCheatsheet(directoryToLoad.files);
-				}
-			});
+	async function loadCheatsheetDirectories() {
+		try {
+			const directories = await invokeLoadCheatsheetDirectoriesCommand();
+			cheatsheetDirectories = orderAllDirectoriesByName(directories);
+			const directoryToLoad = findFirstDirectoryWithCheatsheets(cheatsheetDirectories);
+			if (directoryToLoad && directoryToLoad?.files.length > 0) {
+				currentDirectory = directoryToLoad;
+				await loadCheatsheet(currentDirectory.files);
+			}
+		} catch (error) {
+			console.error('Failed to load cheatsheet directories', error);
+		}
 	}
 
-	function menuItemClicked(event: CustomEvent<Directory>) {
+	async function menuItemClicked(event: CustomEvent<Directory>) {
 		currentDirectory = event.detail;
-		loadCheatsheet(event.detail.files);
+		await loadCheatsheet(event.detail.files);
 	}
 
-	function editCheatsheet(event: CustomEvent<{ path: string; name: string }>) {
-		invoke('edit_cheatsheet', { path: event.detail.path }).catch((e) => {
-			console.error(e);
+	function editDirectory(event: CustomEvent<{ path: string; name: string }>) {
+		invokeEditDirectoryCommand(event.detail.path).catch((e) => {
+			console.error('Failed to invoke edit directory command', e);
+		});
+	}
+
+	function editFile(event: CustomEvent<{ path: string; name: string }>) {
+		invokeEditFileCommand(event.detail.path).catch((e) => {
+			console.error('Failed to invoke edit file command', e);
 		});
 	}
 
 	function editCognitioConfig() {
-		invoke('edit_cognitio_config').catch((e) => {
-			console.error(e);
+		invokeEditCognitioConfigCommand().catch((e) => {
+			console.error('Failed to invoke edit cognitio config command', e);
 		});
 	}
 
-	onMount(async () => {
-		loadCheatsheetDirectories();
+	onMount(() => {
+		async function initialize() {
+			await loadCheatsheetDirectories();
 
-		const unlisten = await listen('file-changed', (event: Event<FileChangedPayload>) => {
-			if (event.event === 'file-changed') {
-				loadCheatsheetDirectories();
-			}
-		});
-		subscriptions.push(unlisten);
-	});
-
-	onDestroy(async () => {
-		for (const sub of subscriptions) {
-			sub();
+			const unlisten = await listenForFileChangedEvents(
+				async (event: Event<FileChangedPayload>) => {
+					if (event.event === 'file-changed') {
+						await loadCheatsheetDirectories();
+					}
+				}
+			);
+			subscriptions.push(unlisten);
 		}
+
+		initialize();
+
+		return () => {
+			for (const unsub of subscriptions) {
+				unsub();
+			}
+		};
 	});
 </script>
 
-<div class="page-root">
-	<Menu
-		directories={cheatsheetDirectories}
-		activeDirectory={currentDirectory}
-		on:menu-item-click={menuItemClicked}
-		on:edit-cognitio-config-click={editCognitioConfig}
-	/>
+{#key currentCheatsheet}
+	<div class="page-root">
+		<Menu
+			directories={cheatsheetDirectories}
+			activeDirectory={currentDirectory}
+			on:menu-item-click={menuItemClicked}
+			on:edit-cognitio-config-click={editCognitioConfig}
+		/>
 
-	<div class="page-content">
-		{#if !currentCheatsheet || !currentDirectory}
-			<h2>No cheatsheet selected</h2>
-			<p>Select a cheatsheet in the left-side menu.</p>
+		{#if !cheatsheetDirectories}
+			<div class="page-content">
+				<div class="error-message">
+					<h2>Nothing to show</h2>
+					<p>There appears to be no cheatsheet directories listed in cognitio.yaml.</p>
+					<p>
+						<button class="edit-btn" on:click={editCognitioConfig}
+							>Edit the Cognitio config file</button
+						> to add a directory and get started.
+					</p>
+				</div>
+			</div>
 		{:else}
-			<Cheatsheet
-				path={currentDirectory.path}
-				name={currentDirectory?.name}
-				cheatsheet={currentCheatsheet}
-				on:edit-cheatsheet={editCheatsheet}
-			/>
+			<div class="page-content">
+				{#if !currentCheatsheet || !currentDirectory}
+					<div class="error-message">
+						<h2>No cheatsheet selected</h2>
+						<p>Select a cheatsheet in the left-side menu.</p>
+					</div>
+				{:else}
+					<Cheatsheet
+						path={currentDirectory.path}
+						name={currentDirectory?.name}
+						cheatsheet={currentCheatsheet}
+						on:edit-directory={editDirectory}
+						on:edit-file={editFile}
+					/>
+				{/if}
+			</div>
 		{/if}
 	</div>
-</div>
+{/key}
 
 <style>
 	.page-root {
@@ -147,5 +186,25 @@
 	.page-content {
 		padding-top: 0;
 		width: 100%;
+	}
+
+	.error-message {
+		padding-left: 24px;
+	}
+
+	.edit-btn {
+		display: inline-block;
+		border: none;
+		padding: 2px 4px;
+		margin: 0;
+		text-decoration: none;
+		background: var(--foreground);
+		color: var(--accent);
+		font-family: 'REM';
+		font-size: 0.8rem;
+		cursor: pointer;
+		text-align: center;
+		transition: background 250ms ease-in-out, transform 150ms ease;
+		border-radius: 4px;
 	}
 </style>

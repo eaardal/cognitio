@@ -99,6 +99,7 @@ fn run_tauri() -> Result<(), tauri::Error> {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             load_cheatsheet,
+            load_cheatsheet_section,
             list_cheatsheet_directories,
             edit_directory,
             edit_file,
@@ -186,6 +187,21 @@ fn load_cheatsheet(files: Vec<DirectoryFile>) -> HashMap<String, String> {
 }
 
 #[tauri::command]
+fn load_cheatsheet_section(path: String) -> HashMap<String, String> {
+    let mut cheatsheet: HashMap<String, String> = HashMap::new();
+    let file_content = read_file_to_string(&path).unwrap_or_default();
+    let file_name = Path::new(&path)
+        .file_name()
+        .unwrap_or_default()
+        .to_str()
+        .unwrap_or_default()
+        .to_string()
+        .replace(".md", "");
+    cheatsheet.insert(file_name, file_content);
+    cheatsheet
+}
+
+#[tauri::command]
 fn list_cheatsheet_directories() -> Vec<Directory> {
     let conf = read_cognitio_yaml().unwrap();
     let res: Vec<Directory> = conf
@@ -211,7 +227,7 @@ fn emit_event_to_frontend_when_file_changed(receiver: Receiver<String>, tauri_ap
     tauri::async_runtime::spawn(async move {
         for msg in receiver.iter() {
             tauri_app
-                .emit_all("file-changed", FileChangedPayload { path: msg })
+                .emit_all("file_changed", FileChangedPayload { path: msg })
                 .unwrap();
         }
     });

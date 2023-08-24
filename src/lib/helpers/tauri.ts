@@ -18,6 +18,10 @@ export function invokeLoadCheatsheetCommand(files: File[]): Promise<Record<strin
 	return invoke('load_cheatsheet', { files });
 }
 
+export function invokeLoadCheatsheetSectionCommand(path: string): Promise<Record<string, string>> {
+	return invoke('load_cheatsheet_section', { path });
+}
+
 export function invokeLoadCheatsheetDirectoriesCommand(): Promise<Directory[]> {
 	return invoke('list_cheatsheet_directories');
 }

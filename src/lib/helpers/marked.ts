@@ -119,3 +119,11 @@ marked.use(
 );
 
 export { marked };
+
+export function cheatsheetToMarkdown(cheatsheet: Record<string, string>): Record<string, string> {
+	return Object.keys(cheatsheet).reduce((all, key) => {
+		const markdown = cheatsheet[key] as string;
+		const html = marked.parse(markdown);
+		return html ? { ...all, [key]: html } : all;
+	}, {} as Record<string, string>);
+}

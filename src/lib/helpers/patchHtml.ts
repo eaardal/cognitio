@@ -1,3 +1,34 @@
+// If a section (div with class .mk-section) has no <pre> elements or divs with class .mk-code-block (aka the section has no code blocks in it),
+// we want to wrap all children in a new div with class .mk-text-block. Any h3 elements should not be wrapped in this div.
+function wrapNonCodeInTextBlockDivs(doc: Document) {
+	const sections = doc.querySelectorAll('.mk-section');
+
+	sections.forEach((section) => {
+		const children = Array.from(section.children);
+
+		// Check if there are no <pre> elements as children
+		const hasPreElements = children.some(
+			(child) => child.tagName.toLowerCase() === 'pre' || child.classList.contains('mk-code-block')
+		);
+
+		if (!hasPreElements) {
+			const newDiv = document.createElement('div');
+			newDiv.classList.add('mk-text-block');
+
+			children.forEach((child) => {
+				// Don't wrap <h3> elements
+				if (child.tagName.toLowerCase() === 'h3') {
+					section.insertBefore(newDiv, child); // Insert the new div before the <h3>
+				} else {
+					newDiv.appendChild(child); // Add the child to the new div
+				}
+			});
+
+			section.appendChild(newDiv); // Append the new div to the section
+		}
+	});
+}
+
 // Generate a 6 character string of random letters and numbers we can use as a unique ID.
 function generateRandomText(): string {
 	const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -14,7 +45,7 @@ function generateRandomText(): string {
 
 // Walk backwards from each <pre> tag until we meet the section's heading (<h3>) or another <pre> tag
 // and wrap everything in between into a new div.
-function walkBackwards(preTags: NodeListOf<HTMLPreElement>, doc: Document) {
+function wrapTextBlocksBackwardsFromCodeBlocks(preTags: NodeListOf<HTMLPreElement>, doc: Document) {
 	preTags.forEach((pre) => {
 		// Create a new div with class "mk-text-block"
 		const newDiv = doc.createElement('div');
@@ -42,7 +73,7 @@ function walkBackwards(preTags: NodeListOf<HTMLPreElement>, doc: Document) {
 
 // Walk forwards from each <pre> tag until we meet another <pre> tag
 // and wrap everything in between into a new div.
-function walkForwards(preTags: NodeListOf<HTMLPreElement>, doc: Document) {
+function wrapTextBlocksForwardsFromCodeBlocks(preTags: NodeListOf<HTMLPreElement>, doc: Document) {
 	preTags.forEach((pre) => {
 		// Create a new div with class "mk-text-block"
 		const newDiv = doc.createElement('div');
@@ -126,12 +157,9 @@ function ensureNoMkTextBlockSiblings(doc: Document) {
  * once the markdown has been processed to HTML and manipulate the final HTML ourselves to wrap
  * the content we want in mk-text-block divs.
  *
- * patchHtmlWithMkTextBlockDivs takes care of this mess...
+ * organizeSections takes care of this mess...
  */
-export function patchHtmlWithMkTextBlockDivs(html: string) {
-	const parser = new DOMParser();
-	const doc = parser.parseFromString(html, 'text/html');
-
+function organizeSections(doc: Document) {
 	// The logic for wrapping content in mk-text-block divs is to find all <pre> tags
 	// and walk the sibling elements backwards until we meet a <h3> or <pre> tag.
 	// Every HTML element we found along the way should be added to a new div with the class mk-text-block.
@@ -172,10 +200,10 @@ export function patchHtmlWithMkTextBlockDivs(html: string) {
 	const preTags = doc.querySelectorAll('pre');
 
 	// From each <pre> tag, walk backwards and insert necessary divs with the .mk-text-block class.
-	walkBackwards(preTags, doc);
+	wrapTextBlocksBackwardsFromCodeBlocks(preTags, doc);
 
 	// Then walk forwards and do the same.
-	walkForwards(preTags, doc);
+	wrapTextBlocksForwardsFromCodeBlocks(preTags, doc);
 
 	preTags.forEach((pre) => {
 		const elementId = generateRandomText();
@@ -200,7 +228,14 @@ export function patchHtmlWithMkTextBlockDivs(html: string) {
 		const copybtn = makeCopyButton(doc, elementId);
 		codeBlockDiv.appendChild(copybtn);
 	});
+}
 
+export function patchHtmlWithMkTextBlockDivs(html: string) {
+	const parser = new DOMParser();
+	const doc = parser.parseFromString(html, 'text/html');
+
+	organizeSections(doc);
+	wrapNonCodeInTextBlockDivs(doc);
 	ensureNoMkTextBlockSiblings(doc);
 
 	// Serialize the updated document back to an HTML string

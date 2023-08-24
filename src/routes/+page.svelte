@@ -1,20 +1,21 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import type { Event, UnlistenFn } from '@tauri-apps/api/event';
-	import dompurify from 'dompurify';
 	import orderBy from 'lodash/orderBy';
-	import { marked } from '$lib/helpers/marked';
+	import { cheatsheetToMarkdown } from '$lib/helpers/marked';
 	import Cheatsheet from '$lib/components/Cheatsheet.svelte';
 	import Menu from '$lib/components/Menu.svelte';
-	import type { Directory, File, FileChangedPayload } from '$lib/models';
+	import type { Directory, File, FileChangedPayload, MenuItem, MenuSection } from '$lib/models';
 	import {
 		invokeEditCognitioConfigCommand,
 		invokeEditDirectoryCommand,
 		invokeEditFileCommand,
 		invokeLoadCheatsheetCommand,
 		invokeLoadCheatsheetDirectoriesCommand,
+		invokeLoadCheatsheetSectionCommand,
 		listenForFileChangedEvents
 	} from '$lib/helpers/tauri';
+	import { mapDirectoriesToMenuSections } from '$lib/models/mapping';
 
 	let cheatsheetDirectories: Directory[];
 	$: cheatsheetDirectories = [];
@@ -25,20 +26,36 @@
 	let currentCheatsheet: Record<string, string> | undefined;
 	$: currentCheatsheet = undefined;
 
+	let menuSections: MenuSection[];
+	$: menuSections = [];
+
+	let activeMenuItem: MenuItem | undefined;
+	$: activeMenuItem = undefined;
+
 	let subscriptions: UnlistenFn[] = [];
 
 	async function loadCheatsheet(files: File[]) {
 		try {
 			const rawCheatsheet = await invokeLoadCheatsheetCommand(files);
+			currentCheatsheet = cheatsheetToMarkdown(rawCheatsheet);
+		} catch (error) {
+			console.error('Failed to load cheatsheet', error);
+		}
+	}
 
-			const cheatsheet = Object.keys(rawCheatsheet).reduce((all, key) => {
-				const markdown = rawCheatsheet[key] as string;
-				const sanitizedMarkdown = dompurify.sanitize(markdown);
-				const html = marked.parse(sanitizedMarkdown);
-				return html ? { ...all, [key]: html } : all;
-			}, {} as Record<string, string>);
+	async function loadCheatsheetSection(path: string) {
+		try {
+			const rawCheatsheet = await invokeLoadCheatsheetSectionCommand(path);
+			const updatedCheatsheet = cheatsheetToMarkdown(rawCheatsheet);
 
-			currentCheatsheet = cheatsheet;
+			if (!currentCheatsheet) {
+				currentCheatsheet = updatedCheatsheet;
+				return;
+			}
+
+			Object.keys(rawCheatsheet).forEach((key) => {
+				currentCheatsheet![key] = updatedCheatsheet[key];
+			});
 		} catch (error) {
 			console.error('Failed to load cheatsheet', error);
 		}
@@ -76,6 +93,7 @@
 		try {
 			const directories = await invokeLoadCheatsheetDirectoriesCommand();
 			cheatsheetDirectories = orderAllDirectoriesByName(directories);
+			menuSections = mapDirectoriesToMenuSections(cheatsheetDirectories);
 			const directoryToLoad = findFirstDirectoryWithCheatsheets(cheatsheetDirectories);
 			if (directoryToLoad && directoryToLoad?.files.length > 0) {
 				currentDirectory = directoryToLoad;
@@ -86,9 +104,33 @@
 		}
 	}
 
-	async function menuItemClicked(event: CustomEvent<Directory>) {
-		currentDirectory = event.detail;
-		await loadCheatsheet(event.detail.files);
+	function findDirectoryWithPath(path: string): Directory {
+		let directory: Directory | undefined;
+
+		for (const dir of cheatsheetDirectories) {
+			if (dir.path === path) {
+				directory = dir;
+				break;
+			}
+
+			if (dir.sub_directories.length > 0) {
+				for (const subDirectory of dir.sub_directories) {
+					if (subDirectory.path === path) {
+						directory = subDirectory;
+						break;
+					}
+				}
+			}
+		}
+
+		return directory!;
+	}
+
+	async function menuItemClicked(event: CustomEvent<MenuItem>) {
+		const menuItemAsDirectory = findDirectoryWithPath(event.detail.id);
+		currentDirectory = menuItemAsDirectory;
+		activeMenuItem = event.detail;
+		await loadCheatsheet(menuItemAsDirectory!.files);
 	}
 
 	function editDirectory(event: CustomEvent<{ path: string; name: string }>) {
@@ -113,13 +155,9 @@
 		async function initialize() {
 			await loadCheatsheetDirectories();
 
-			const unlisten = await listenForFileChangedEvents(
-				async (event: Event<FileChangedPayload>) => {
-					if (event.event === 'file-changed') {
-						await loadCheatsheetDirectories();
-					}
-				}
-			);
+			const unlisten = await listenForFileChangedEvents((event: Event<FileChangedPayload>) => {
+				void loadCheatsheetSection(event.payload.path);
+			});
 			subscriptions.push(unlisten);
 		}
 
@@ -136,8 +174,8 @@
 {#key currentCheatsheet}
 	<div class="page-root">
 		<Menu
-			directories={cheatsheetDirectories}
-			activeDirectory={currentDirectory}
+			{menuSections}
+			active={activeMenuItem}
 			on:menu-item-click={menuItemClicked}
 			on:edit-cognitio-config-click={editCognitioConfig}
 		/>

@@ -1,54 +1,38 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import type { Directory } from '$lib/models';
-	import Tooltip from '$lib/components/Tooltip.svelte';
+	import type { MenuItem, MenuSection as MenuSectionModel } from '$lib/models';
+	import MenuSection from './MenuSection.svelte';
 
 	const dispatch = createEventDispatcher();
 
-	export let directories: Directory[] = [];
-	export let activeDirectory: Directory | undefined;
+	export let menuSections: MenuSectionModel[] = [];
+	export let active: MenuItem | undefined;
 
-	function onMenuItemClick(directory: Directory): undefined {
-		dispatch('menu-item-click', directory);
+	function onMenuItemClick(menuItem: MenuItem): undefined {
+		dispatch('menu-item-click', menuItem);
 	}
 
 	function onEditCognitioConfigClick() {
 		dispatch('edit-cognitio-config-click');
 	}
+
+	function propagateMenuItemClick(event: CustomEvent<MenuItem>) {
+		onMenuItemClick(event.detail);
+	}
 </script>
 
 <div class="menu">
 	<ul class="menu-list">
-		{#if directories.length === 0}
+		{#if menuSections.length === 0}
 			<p>Nothing to show</p>
 		{/if}
-		{#each directories as directory}
-			{#if directories.length === 1}
-				<div class="menu-section">
-					{#if directory.sub_directories.length > 0 && directory.files.length === 0}
-						{#each directory.sub_directories as subDirectory}
-							<li class="menu-item" class:active={activeDirectory?.path === subDirectory.path}>
-								<a href="#." on:click={onMenuItemClick(subDirectory)}>{subDirectory.name}</a>
-							</li>
-						{/each}
-					{/if}
-				</div>
-			{:else}
-				<div class="menu-section">
-					{#if directory.sub_directories.length > 0 && directory.files.length === 0}
-						<Tooltip content={directory.path}>
-							<li class="menu-item root-directory">
-								<div>{directory.name}</div>
-							</li>
-						</Tooltip>
-						{#each directory.sub_directories as subDirectory}
-							<li class="menu-item" class:active={activeDirectory?.path === subDirectory.path}>
-								<a href="#." on:click={onMenuItemClick(subDirectory)}>{subDirectory.name}</a>
-							</li>
-						{/each}
-					{/if}
-				</div>
-			{/if}
+		{#each menuSections as menuSection}
+			<MenuSection
+				{menuSection}
+				{active}
+				showSectionTitle={menuSections.length > 1}
+				on:menu-item-click={propagateMenuItemClick}
+			/>
 		{/each}
 	</ul>
 	<div class="bottom">
@@ -59,12 +43,34 @@
 
 <style>
 	.menu {
+		--width: 225px;
 		background-color: var(--foreground);
-		min-width: 200px;
-		width: 200px;
+		min-width: var(--width);
+		width: var(--width);
 		display: flex;
 		flex-direction: column;
 		z-index: 1;
+		position: sticky;
+		top: 0;
+		overflow: auto;
+		height: 100vh;
+
+		/* Scrollbar */
+		--scrollbar-foreground: var(--theme-3);
+		--scrollbar-background: var(--theme-2);
+		scrollbar-color: var(--scrollbar-foreground) var(--scrollbar-background);
+	}
+
+	/* Targetted scrollbar customizations */
+	.menu::-webkit-scrollbar {
+		width: 10px;
+		height: 10px;
+	}
+	.menu::-webkit-scrollbar-thumb {
+		background: var(--scrollbar-foreground);
+	}
+	.menu::-webkit-scrollbar-track {
+		background: var(--scrollbar-background);
 	}
 
 	.menu-list {
@@ -73,30 +79,10 @@
 		padding: 24px;
 	}
 
-	.menu-item {
-		font-size: 1em;
-		color: var(--white);
-	}
-
-	.active > a {
-		font-weight: 600;
-		color: var(--white);
-	}
-
-	.menu-section {
-		margin-bottom: 16px;
-	}
-
-	.root-directory div {
-		color: color-mix(in srgb, var(--foreground) 30%, var(--white));
-		text-transform: uppercase;
-		font-size: 0.8em;
-		letter-spacing: 1.3px;
-	}
-
 	.bottom {
 		width: 100%;
 		height: 50px;
+		margin-bottom: 16px;
 	}
 
 	.bottom > hr {

@@ -12,9 +12,10 @@ It also supports multiple sources of cheatsheets, making it easy for your team m
 
 ### Known bugs
 
-- Detecting file changes and automatically reloading cheatsheets seems flaky when the app is built for distribution but works fine during development.
-- No view/inapropriate view when there are no entries in the `cheatsheets` list (in `cognitio.yaml`).
-- Some cards are very wide if lines are very long, responsiveness needs adjustments.
+- Detecting file changes and automatically reloading cheatsheets seems flaky when the app is built for distribution but works fine during development. Have to right click and use Reload manually to refresh for now.
+- Some characters like `<` are not rendered correctly in markdown code blocks.
+
+`IFS=';' read -a parts <<< "${userAndRole}"` gets rendered like `IFS=';' read -a parts &lt;&lt;&lt; "${userAndRole}"`
 
 ## How to get started
 

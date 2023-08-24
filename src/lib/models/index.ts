@@ -18,3 +18,15 @@ export interface Directory {
 export interface FileChangedPayload {
 	path: string;
 }
+
+export interface MenuItem {
+	id: string;
+	title: string;
+	children: MenuItem[];
+}
+
+export interface MenuSection {
+	title: string;
+	items: MenuItem[];
+	tooltipText: string | undefined;
+}

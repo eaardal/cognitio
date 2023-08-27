@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "0.2.0"
+version = "0.3.0"
 description = "Developer cheatsheets and code snippets via Markdown."
 authors = ["Eirik Årdal"]
 license = ""

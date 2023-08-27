@@ -12,7 +12,6 @@ use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::Deserialize;
 use serde::Serialize;
 use serde_yaml;
-use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use std::env;
 use std::fs;

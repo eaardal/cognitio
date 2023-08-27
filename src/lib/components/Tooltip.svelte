@@ -15,6 +15,7 @@
 		position: relative;
 		display: inline-block;
 		cursor: pointer;
+		z-index: 9999999;
 	}
 
 	.tooltip {
@@ -28,10 +29,11 @@
 		border-radius: 4px;
 		font-size: 0.8em;
 		white-space: nowrap;
-		z-index: 1;
+		z-index: 9999999;
 	}
 
 	.tooltip-container:hover .tooltip {
 		display: block;
+		z-index: 9999999;
 	}
 </style>

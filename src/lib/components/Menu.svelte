@@ -1,12 +1,16 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
-	import type { MenuItem, MenuSection as MenuSectionModel } from '$lib/models';
+	import { createEventDispatcher, onMount } from 'svelte';
+	import type { MenuItem, MenuSection as MenuSectionModel, Styling } from '$lib/models';
 	import MenuSection from './MenuSection.svelte';
+	import { cognitioConfig } from '$lib/stores/config';
+	import { cssStringify } from '$lib/helpers/cssUtils';
 
 	const dispatch = createEventDispatcher();
 
 	export let menuSections: MenuSectionModel[] = [];
-	export let active: MenuItem | undefined;
+	export let activeMenuItemId: string | undefined;
+
+	$: menuStyle = stringifyUserMenuStyling($cognitioConfig?.styling?.menu);
 
 	function onMenuItemClick(menuItem: MenuItem): undefined {
 		dispatch('menu-item-click', menuItem);
@@ -19,9 +23,27 @@
 	function propagateMenuItemClick(event: CustomEvent<MenuItem>) {
 		onMenuItemClick(event.detail);
 	}
+
+	function stringifyUserMenuStyling(styles: Record<string, string> | undefined) {
+		if (!styles) {
+			return '';
+		}
+
+		if (styles?.width && !styles?.minWidth) {
+			styles.minWidth = styles.width;
+		}
+
+		return cssStringify(styles);
+	}
+
+	onMount(() => {
+		cognitioConfig.subscribe((config) => {
+			menuStyle = stringifyUserMenuStyling(config?.styling?.menu);
+		});
+	});
 </script>
 
-<div class="menu">
+<div class="menu" style={menuStyle}>
 	<ul class="menu-list">
 		{#if menuSections.length === 0}
 			<p>Nothing to show</p>
@@ -29,7 +51,7 @@
 		{#each menuSections as menuSection}
 			<MenuSection
 				{menuSection}
-				{active}
+				{activeMenuItemId}
 				showSectionTitle={menuSections.length > 1}
 				on:menu-item-click={propagateMenuItemClick}
 			/>

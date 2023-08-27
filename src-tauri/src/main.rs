@@ -12,6 +12,7 @@ use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::Deserialize;
 use serde::Serialize;
 use serde_yaml;
+use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
@@ -44,11 +45,46 @@ pub struct FileChangedPayload {
     pub path: String,
 }
 
-#[derive(Debug, Deserialize)]
-struct CognitioConfig {
-    pub cheatsheets: Vec<String>,
-    pub editor: String,
+#[derive(Clone, serde::Serialize)]
+pub struct CognitioConfigChangedPayload {
+    pub config: CognitioConfig,
 }
+
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+pub struct CheatsheetInfo {
+    title: String,
+    path: String,
+}
+
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+pub struct Styling {
+    menu: Option<Menu>,
+}
+
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+pub struct Menu {
+    width: Option<String>,
+}
+
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+pub struct CognitioConfig {
+    editor: Option<String>,
+    cheatsheets: Vec<CheatsheetData>,
+    styling: Option<Styling>,
+}
+
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+#[serde(untagged)]
+pub enum CheatsheetData {
+    Simple(String),
+    Info(CheatsheetInfo),
+}
+
+// #[derive(Debug, Deserialize)]
+// struct CognitioConfig {
+//     pub cheatsheets: Vec<String>,
+//     pub editor: String,
+// }
 
 fn main() {
     setup_logger();
@@ -94,12 +130,13 @@ fn run_tauri() -> Result<(), tauri::Error> {
 
     let (sender, receiver) = channel::<String>();
     let cheatsheet_sender = sender.clone();
-    let home_dir_sender = sender.clone();
+    let cognitio_config_sender = sender.clone();
 
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             load_cheatsheet,
             load_cheatsheet_section,
+            load_cognitio_config,
             list_cheatsheet_directories,
             edit_directory,
             edit_file,
@@ -108,8 +145,8 @@ fn run_tauri() -> Result<(), tauri::Error> {
         .setup(|app| {
             let app_handle = app.app_handle();
             watch_cheatsheet_directories(cheatsheet_sender);
-            watch_cognitio_home_dir(home_dir_sender);
-            emit_event_to_frontend_when_file_changed(receiver, app_handle);
+            watch_cognitio_config_file(cognitio_config_sender);
+            emit_events_to_frontend_when_files_change(receiver, app_handle);
             Ok(())
         })
         .run(tauri::generate_context!())
@@ -122,7 +159,14 @@ fn edit_cognitio_config() -> Result<String, tauri::Error> {
     let conf = read_cognitio_yaml().unwrap();
     let editor = conf.editor;
 
-    let cmd_output = std::process::Command::new(editor)
+    if editor.is_none() {
+        return Err(tauri::Error::from(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Editor is not configured in Cognitio config file",
+        )));
+    }
+
+    let cmd_output = std::process::Command::new(editor.unwrap())
         .arg(yaml_path.clone())
         .output();
 
@@ -144,7 +188,14 @@ fn edit_directory(path: String) -> Result<String, tauri::Error> {
     let conf = read_cognitio_yaml().unwrap();
     let editor = conf.editor;
 
-    let cmd_output = std::process::Command::new(editor)
+    if editor.is_none() {
+        return Err(tauri::Error::from(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Editor is not configured in Cognitio config file",
+        )));
+    }
+
+    let cmd_output = std::process::Command::new(editor.unwrap())
         .arg(path.clone())
         .output();
 
@@ -162,7 +213,14 @@ fn edit_file(path: String) -> Result<String, tauri::Error> {
     let conf = read_cognitio_yaml().unwrap();
     let editor = conf.editor;
 
-    let cmd_output = std::process::Command::new(editor)
+    if editor.is_none() {
+        return Err(tauri::Error::from(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Editor is not configured in Cognitio config file",
+        )));
+    }
+
+    let cmd_output = std::process::Command::new(editor.unwrap())
         .arg(path.clone())
         .output();
 
@@ -173,6 +231,11 @@ fn edit_file(path: String) -> Result<String, tauri::Error> {
             Err(tauri::Error::from(error))
         }
     }
+}
+
+#[tauri::command]
+fn load_cognitio_config() -> CognitioConfig {
+    return read_cognitio_yaml().unwrap();
 }
 
 #[tauri::command]
@@ -207,28 +270,66 @@ fn list_cheatsheet_directories() -> Vec<Directory> {
     let res: Vec<Directory> = conf
         .cheatsheets
         .iter()
-        .map(|cheatsheet_path| Directory {
-            name: Path::new(cheatsheet_path)
-                .file_name()
-                .unwrap_or_default()
-                .to_str()
-                .unwrap_or_default()
-                .to_string(),
-            path: String::from(cheatsheet_path),
-            sub_directories: list_subdirectories(&cheatsheet_path),
-            files: Vec::new(),
+        .map(|cheatsheet_path| match cheatsheet_path {
+            CheatsheetData::Simple(path) => {
+                let name = Path::new(path)
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_str()
+                    .unwrap_or_default()
+                    .to_string();
+                //let files = list_files_in_directory(path);
+                Directory {
+                    name,
+                    path: path.to_string(),
+                    files: Vec::new(),
+                    sub_directories: list_subdirectories(&path),
+                }
+            }
+            CheatsheetData::Info(info) => {
+                let name = info.title.clone();
+                //let files = list_files_in_directory(&info.path);
+                Directory {
+                    name,
+                    path: info.path.clone(),
+                    files: Vec::new(),
+                    sub_directories: list_subdirectories(&info.path),
+                }
+            } /*
+                  Directory {
+                  name: Path::new(cheatsheet_path)
+                      .file_name()
+                      .unwrap_or_default()
+                      .to_str()
+                      .unwrap_or_default()
+                      .to_string(),
+                  path: String::from(cheatsheet_path),
+                  sub_directories: list_subdirectories(&cheatsheet_path),
+                  files: Vec::new(),
+              } */
         })
         .collect();
     // info!("Cheatsheets: {:?}", serde_json::to_string(&res).unwrap());
     res
 }
 
-fn emit_event_to_frontend_when_file_changed(receiver: Receiver<String>, tauri_app: AppHandle) {
+fn emit_events_to_frontend_when_files_change(receiver: Receiver<String>, tauri_app: AppHandle) {
     tauri::async_runtime::spawn(async move {
         for msg in receiver.iter() {
-            tauri_app
-                .emit_all("file_changed", FileChangedPayload { path: msg })
-                .unwrap();
+            if msg.ends_with("cognitio.yaml") {
+                tauri_app
+                    .emit_all(
+                        "cognitio_config_changed",
+                        CognitioConfigChangedPayload {
+                            config: read_cognitio_yaml().unwrap(),
+                        },
+                    )
+                    .unwrap();
+            } else {
+                tauri_app
+                    .emit_all("file_changed", FileChangedPayload { path: msg })
+                    .unwrap();
+            }
         }
     });
 }
@@ -239,7 +340,7 @@ fn watch_cheatsheet_directories(on_file_changed: Sender<String>) {
     }
 }
 
-fn watch_cognitio_home_dir(on_file_changed: Sender<String>) {
+fn watch_cognitio_config_file(on_file_changed: Sender<String>) {
     let home = cognitio_home_dir();
     tauri::async_runtime::spawn(watch_dir(home, on_file_changed.clone()));
 }

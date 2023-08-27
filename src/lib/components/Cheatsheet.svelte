@@ -32,7 +32,7 @@
 	</div>
 	<div class="section-shortcuts">
 		{#each Object.keys(cheatsheet) as sectionName}
-			<a href={`#${sectionName}`}>{sectionName}</a>
+			<a id={`goto_${sectionName}`} href={`#section_${sectionName}`}>{sectionName}</a>
 		{/each}
 	</div>
 	<div class="content">

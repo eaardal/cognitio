@@ -18,6 +18,9 @@ export interface Directory {
 export interface FileChangedPayload {
 	path: string;
 }
+export interface CognitioConfigChangedPayload {
+	config: CognitioConfig;
+}
 
 export interface MenuItem {
 	id: string;
@@ -29,4 +32,19 @@ export interface MenuSection {
 	title: string;
 	items: MenuItem[];
 	tooltipText: string | undefined;
+}
+
+export interface CheatsheetInfo {
+	title: string;
+	path: string;
+}
+
+export interface Styling {
+	menu?: Record<string, string>;
+}
+
+export interface CognitioConfig {
+	editor?: string;
+	cheatsheets: string[] | CheatsheetInfo[];
+	styling?: Styling;
 }

@@ -1,4 +1,10 @@
-import type { Directory, File, FileChangedPayload } from '$lib/models';
+import type {
+	CognitioConfig,
+	CognitioConfigChangedPayload,
+	Directory,
+	File,
+	FileChangedPayload
+} from '$lib/models';
 import { listen, type UnlistenFn, type Event } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/tauri';
 
@@ -26,8 +32,20 @@ export function invokeLoadCheatsheetDirectoriesCommand(): Promise<Directory[]> {
 	return invoke('list_cheatsheet_directories');
 }
 
-export type OnFileChanged = (event: Event<FileChangedPayload>) => void;
+export function invokeLoadCognitioConfigCommand(): Promise<CognitioConfig> {
+	return invoke('load_cognitio_config');
+}
 
-export function listenForFileChangedEvents(onFileChanged: OnFileChanged): Promise<UnlistenFn> {
+export type OnFileChanged<T> = (event: Event<T>) => void;
+
+export function listenForFileChangedEvents(
+	onFileChanged: OnFileChanged<FileChangedPayload>
+): Promise<UnlistenFn> {
 	return listen('file_changed', onFileChanged);
+}
+
+export function listenForCognitioConfigChangedEvents(
+	onFileChanged: OnFileChanged<CognitioConfigChangedPayload>
+): Promise<UnlistenFn> {
+	return listen('cognitio_config_changed', onFileChanged);
 }

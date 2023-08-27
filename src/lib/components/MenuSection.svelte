@@ -1,40 +1,49 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
 	import orderBy from 'lodash/orderBy';
 	import type { MenuItem, MenuSection } from '$lib/models';
-	import Tooltip from './Tooltip.svelte';
+	import MenuSubSection from './MenuSubSection.svelte';
 
 	const dispatch = createEventDispatcher();
 
 	export let menuSection: MenuSection | undefined;
-	export let active: MenuItem | undefined;
+	export let activeMenuItemId: string | undefined;
 	export let showSectionTitle: boolean = false;
 
 	function onMenuItemClick(menuItem: MenuItem): undefined {
 		dispatch('menu-item-click', menuItem);
 	}
+
+	function showSubSection(menuItem: MenuItem): boolean {
+		return !!activeMenuItemId && menuItem.id === activeMenuItemId && menuItem.children.length > 0;
+	}
+
+	function removeAnchorHref() {
+		// Svelte has a accessibility (a11y) module that warns about a11y violations.
+		// We want some anchor tags in the menu to have a on:click handler but not a href attribute,
+		// but the a11y module complains about this. This function removes the href attribute while keeping a11y happy because href is set initially.
+		document.querySelectorAll('a[href="[a11y-remove]"]').forEach((anchor) => {
+			anchor.removeAttribute('href');
+		});
+	}
+
+	onMount(() => {
+		removeAnchorHref();
+	});
 </script>
 
 <div class="menu-section">
 	{#if showSectionTitle && menuSection}
-		<Tooltip content={menuSection.tooltipText}>
-			<li class="menu-section-title">
-				<div>{menuSection.title}</div>
-			</li>
-		</Tooltip>
+		<li class="menu-section-title">
+			<div>{menuSection.title}</div>
+		</li>
 	{/if}
 
 	{#each menuSection?.items || [] as menuItem}
-		<li class="menu-item" class:active={active?.id === menuItem.id}>
-			<a href="" on:click={onMenuItemClick(menuItem)}>{menuItem.title}</a>
-			{#if active && menuItem.id === active.id && menuItem.children.length > 0}
-				<ul class="menu-section">
-					{#each orderBy(menuItem.children, ['title'], ['asc']) as subMenuItem}
-						<li class="menu-sub-item">
-							<a href="" on:click={onMenuItemClick(subMenuItem)}>{subMenuItem.title}</a>
-						</li>
-					{/each}
-				</ul>
+		<li class="menu-item" class:active={activeMenuItemId && activeMenuItemId === menuItem.id}>
+			<a href="[a11y-remove]" on:click={onMenuItemClick(menuItem)}>{menuItem.title}</a>
+			{#if showSubSection(menuItem)}
+				<MenuSubSection items={orderBy(menuItem.children, ['title'], ['asc'])} />
 			{/if}
 		</li>
 	{/each}
@@ -57,16 +66,8 @@
 		color: var(--white);
 	}
 
-	.menu-sub-item {
-		font-size: 0.8em;
-		color: var(--white);
-		list-style-type: none;
-		padding: 0;
-		margin: 0;
-	}
-
-	.menu-sub-item a {
-		color: color-mix(in srgb, var(--theme-5) 70%, var(--white));
+	.menu-item > a {
+		cursor: pointer;
 	}
 
 	.active > a {

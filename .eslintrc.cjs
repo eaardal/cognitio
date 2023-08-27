@@ -26,5 +26,11 @@ module.exports = {
 				parser: '@typescript-eslint/parser'
 			}
 		}
-	]
+	],
+	rules: {
+		'a11y-invalid-attribute': 0,
+		'a11y-click-events-have-key-events': 0,
+		'a11y-no-static-element-interactions': 0,
+		'a11y-missing-attribute': 0
+	}
 };

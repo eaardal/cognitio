@@ -16,9 +16,9 @@
 </script>
 
 <!-- svelte-ignore a11y-missing-content -->
-<a id={name} />
+<!-- <a id={name} /> -->
 
-<h3 class="section-title">
+<h3 id={`section_${name}`} class="section-title">
 	{name}
 	<Tooltip content="Go to the top of the page" top="120%">
 		<button class="go-to-top-btn" on:click={scrollToTop}>Top</button>

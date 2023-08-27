@@ -1,11 +1,17 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { Event, UnlistenFn } from '@tauri-apps/api/event';
-	import orderBy from 'lodash/orderBy';
 	import { cheatsheetToMarkdown } from '$lib/helpers/marked';
 	import Cheatsheet from '$lib/components/Cheatsheet.svelte';
 	import Menu from '$lib/components/Menu.svelte';
-	import type { Directory, File, FileChangedPayload, MenuItem, MenuSection } from '$lib/models';
+	import type {
+		CognitioConfigChangedPayload,
+		Directory,
+		File,
+		FileChangedPayload,
+		MenuItem,
+		MenuSection
+	} from '$lib/models';
 	import {
 		invokeEditCognitioConfigCommand,
 		invokeEditDirectoryCommand,
@@ -13,9 +19,17 @@
 		invokeLoadCheatsheetCommand,
 		invokeLoadCheatsheetDirectoriesCommand,
 		invokeLoadCheatsheetSectionCommand,
+		invokeLoadCognitioConfigCommand,
+		listenForCognitioConfigChangedEvents,
 		listenForFileChangedEvents
 	} from '$lib/helpers/tauri';
 	import { mapDirectoriesToMenuSections } from '$lib/models/mapping';
+	import { cognitioConfig } from '$lib/stores/config';
+	import {
+		findDirectoryWithPath,
+		findFirstDirectoryWithCheatsheets,
+		orderAllDirectoriesByName
+	} from '$lib/helpers/directoryUtils';
 
 	let cheatsheetDirectories: Directory[];
 	$: cheatsheetDirectories = [];
@@ -29,10 +43,15 @@
 	let menuSections: MenuSection[];
 	$: menuSections = [];
 
-	let activeMenuItem: MenuItem | undefined;
-	$: activeMenuItem = undefined;
+	let activeMenuItemId: string | undefined;
+	$: activeMenuItemId = undefined;
 
 	let subscriptions: UnlistenFn[] = [];
+
+	async function loadCognitioConfig() {
+		const config = await invokeLoadCognitioConfigCommand();
+		cognitioConfig.set(config);
+	}
 
 	async function loadCheatsheet(files: File[]) {
 		try {
@@ -61,34 +80,6 @@
 		}
 	}
 
-	function findFirstDirectoryWithCheatsheets(directories: Directory[]): Directory | undefined {
-		let directoryToLoad: Directory | undefined;
-
-		for (const directory of directories) {
-			if (directory.files.length > 0) {
-				directoryToLoad = directory;
-				break;
-			}
-
-			if (directory.sub_directories.length > 0) {
-				directoryToLoad = findFirstDirectoryWithCheatsheets(directory.sub_directories);
-				if (directoryToLoad) {
-					break;
-				}
-			}
-		}
-
-		return directoryToLoad;
-	}
-
-	function orderAllDirectoriesByName(directories: Directory[]): Directory[] {
-		const orderedDirectories = orderBy(directories, ['name'], ['asc']);
-		for (const dir of orderedDirectories) {
-			dir.sub_directories = orderBy(dir.sub_directories, ['name'], ['asc']);
-		}
-		return orderedDirectories;
-	}
-
 	async function loadCheatsheetDirectories() {
 		try {
 			const directories = await invokeLoadCheatsheetDirectoriesCommand();
@@ -97,6 +88,7 @@
 			const directoryToLoad = findFirstDirectoryWithCheatsheets(cheatsheetDirectories);
 			if (directoryToLoad && directoryToLoad?.files.length > 0) {
 				currentDirectory = directoryToLoad;
+				activeMenuItemId = directoryToLoad.path;
 				await loadCheatsheet(currentDirectory.files);
 			}
 		} catch (error) {
@@ -104,33 +96,13 @@
 		}
 	}
 
-	function findDirectoryWithPath(path: string): Directory {
-		let directory: Directory | undefined;
-
-		for (const dir of cheatsheetDirectories) {
-			if (dir.path === path) {
-				directory = dir;
-				break;
-			}
-
-			if (dir.sub_directories.length > 0) {
-				for (const subDirectory of dir.sub_directories) {
-					if (subDirectory.path === path) {
-						directory = subDirectory;
-						break;
-					}
-				}
-			}
-		}
-
-		return directory!;
-	}
-
 	async function menuItemClicked(event: CustomEvent<MenuItem>) {
-		const menuItemAsDirectory = findDirectoryWithPath(event.detail.id);
-		currentDirectory = menuItemAsDirectory;
-		activeMenuItem = event.detail;
-		await loadCheatsheet(menuItemAsDirectory!.files);
+		const menuItemAsDirectory = findDirectoryWithPath(cheatsheetDirectories, event.detail.id);
+		if (menuItemAsDirectory) {
+			currentDirectory = menuItemAsDirectory;
+			activeMenuItemId = event.detail.id;
+			await loadCheatsheet(menuItemAsDirectory!.files);
+		}
 	}
 
 	function editDirectory(event: CustomEvent<{ path: string; name: string }>) {
@@ -154,11 +126,22 @@
 	onMount(() => {
 		async function initialize() {
 			await loadCheatsheetDirectories();
+			await loadCognitioConfig();
 
-			const unlisten = await listenForFileChangedEvents((event: Event<FileChangedPayload>) => {
-				void loadCheatsheetSection(event.payload.path);
-			});
-			subscriptions.push(unlisten);
+			const unlistenFileChanged = await listenForFileChangedEvents(
+				(event: Event<FileChangedPayload>) => {
+					void loadCheatsheetSection(event.payload.path);
+				}
+			);
+			subscriptions.push(unlistenFileChanged);
+
+			const unlistenConfigChanged = await listenForCognitioConfigChangedEvents(
+				(event: Event<CognitioConfigChangedPayload>) => {
+					cognitioConfig.update(() => event.payload.config);
+					void loadCheatsheetDirectories();
+				}
+			);
+			subscriptions.push(unlistenConfigChanged);
 		}
 
 		initialize();
@@ -175,7 +158,7 @@
 	<div class="page-root">
 		<Menu
 			{menuSections}
-			active={activeMenuItem}
+			{activeMenuItemId}
 			on:menu-item-click={menuItemClicked}
 			on:edit-cognitio-config-click={editCognitioConfig}
 		/>

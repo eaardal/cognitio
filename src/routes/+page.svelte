@@ -23,13 +23,14 @@
 		listenForCognitioConfigChangedEvents,
 		listenForFileChangedEvents
 	} from '$lib/helpers/tauri';
-	import { mapDirectoriesToMenuSections } from '$lib/models/mapping';
+	import { mapDirectoriesToMenuSections, orderMenuSections } from '$lib/models/mapping';
 	import { cognitioConfig } from '$lib/stores/config';
 	import {
 		findDirectoryWithPath,
 		findFirstDirectoryWithCheatsheets,
 		orderAllDirectoriesByName
 	} from '$lib/helpers/directoryUtils';
+	import { orderBy } from 'lodash';
 
 	let cheatsheetDirectories: Directory[];
 	$: cheatsheetDirectories = [];
@@ -84,7 +85,8 @@
 		try {
 			const directories = await invokeLoadCheatsheetDirectoriesCommand();
 			cheatsheetDirectories = orderAllDirectoriesByName(directories);
-			menuSections = mapDirectoriesToMenuSections(cheatsheetDirectories);
+			const menu = mapDirectoriesToMenuSections(cheatsheetDirectories);
+			menuSections = orderMenuSections(menu);
 			const directoryToLoad = findFirstDirectoryWithCheatsheets(cheatsheetDirectories);
 			if (directoryToLoad && directoryToLoad?.files.length > 0) {
 				currentDirectory = directoryToLoad;
@@ -102,6 +104,10 @@
 			currentDirectory = menuItemAsDirectory;
 			activeMenuItemId = event.detail.id;
 			await loadCheatsheet(menuItemAsDirectory!.files);
+			window.scrollTo({
+				top: 0,
+				behavior: 'smooth'
+			});
 		}
 	}
 
@@ -163,7 +169,7 @@
 			on:edit-cognitio-config-click={editCognitioConfig}
 		/>
 
-		{#if !cheatsheetDirectories}
+		{#if typeof cheatsheetDirectories === 'undefined' || menuSections?.length === 0}
 			<div class="page-content">
 				<div class="error-message">
 					<h2>Nothing to show</h2>

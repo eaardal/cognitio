@@ -44,3 +44,9 @@ export function mapDirectoriesToMenuSections(directories: Directory[]): MenuSect
 		return menuSection;
 	});
 }
+
+export function orderMenuSections(menuSections: MenuSection[]): MenuSection[] {
+	return menuSections.sort((a, b) => {
+		return a.title.toLowerCase().localeCompare(b.title.toLowerCase());
+	});
+}

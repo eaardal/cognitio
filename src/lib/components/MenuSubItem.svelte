@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { MenuItem } from '$lib/models';
+	import { hashIncludesPath, pathToHash } from '$lib/helpers/hashUtils';
 
 	export let item: MenuItem;
 
-	let isActive = window.location.hash.includes(item.title);
+	let isActive = hashIncludesPath(item.id);
 
 	onMount(() => {
 		window.addEventListener('hashchange', updateActiveState);
@@ -15,12 +16,12 @@
 	});
 
 	function updateActiveState() {
-		isActive = window.location.hash.includes(encodeURIComponent(item.title));
+		isActive = hashIncludesPath(item.id);
 	}
 </script>
 
 <li class="menu-sub-item" class:active={isActive}>
-	<a href={`#section_${item.title}`}>{item.title}</a>
+	<a href={`#section_${pathToHash(item.id)}`}>{item.title}</a>
 </li>
 
 <style>

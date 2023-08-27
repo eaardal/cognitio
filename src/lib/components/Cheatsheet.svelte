@@ -4,6 +4,7 @@
 	import { addEventHandlersToCopyButtons } from '$lib/helpers/copyButton';
 	import SectionHeader from './SectionHeader.svelte';
 	import MarkdownContent from './MarkdownContent.svelte';
+	import { pathToHash } from '$lib/helpers/hashUtils';
 
 	export let cheatsheet: Record<string, string>;
 	export let name: string;
@@ -20,6 +21,10 @@
 		dispatch('edit-file', { path: filePath, name: event.detail.name });
 	}
 
+	function appendSectionNameToDirectoryPath(sectionName: string) {
+		return `${path}/${sectionName}.md`;
+	}
+
 	afterUpdate(() => {
 		addEventHandlersToCopyButtons();
 	});
@@ -32,13 +37,19 @@
 	</div>
 	<div class="section-shortcuts">
 		{#each Object.keys(cheatsheet) as sectionName}
-			<a id={`goto_${sectionName}`} href={`#section_${sectionName}`}>{sectionName}</a>
+			<a href={`#section_${pathToHash(appendSectionNameToDirectoryPath(sectionName))}`}
+				>{sectionName}</a
+			>
 		{/each}
 	</div>
 	<div class="content">
 		{#each Object.keys(cheatsheet) as sectionName, index}
 			<div class="section-root">
-				<SectionHeader name={sectionName} on:edit-click={onEditFileClick} />
+				<SectionHeader
+					id={appendSectionNameToDirectoryPath(sectionName)}
+					name={sectionName}
+					on:edit-click={onEditFileClick}
+				/>
 				<MarkdownContent markdown={cheatsheet[sectionName]} />
 
 				{#if Object.keys(cheatsheet).length > 1 && index !== Object.keys(cheatsheet).length - 1}

@@ -79,12 +79,6 @@ pub enum CheatsheetData {
     Info(CheatsheetInfo),
 }
 
-// #[derive(Debug, Deserialize)]
-// struct CognitioConfig {
-//     pub cheatsheets: Vec<String>,
-//     pub editor: String,
-// }
-
 fn main() {
     setup_logger();
 
@@ -277,7 +271,6 @@ fn list_cheatsheet_directories() -> Vec<Directory> {
                     .to_str()
                     .unwrap_or_default()
                     .to_string();
-                //let files = list_files_in_directory(path);
                 Directory {
                     name,
                     path: path.to_string(),
@@ -287,28 +280,15 @@ fn list_cheatsheet_directories() -> Vec<Directory> {
             }
             CheatsheetData::Info(info) => {
                 let name = info.title.clone();
-                //let files = list_files_in_directory(&info.path);
                 Directory {
                     name,
                     path: info.path.clone(),
                     files: Vec::new(),
                     sub_directories: list_subdirectories(&info.path),
                 }
-            } /*
-                  Directory {
-                  name: Path::new(cheatsheet_path)
-                      .file_name()
-                      .unwrap_or_default()
-                      .to_str()
-                      .unwrap_or_default()
-                      .to_string(),
-                  path: String::from(cheatsheet_path),
-                  sub_directories: list_subdirectories(&cheatsheet_path),
-                  files: Vec::new(),
-              } */
+            }
         })
         .collect();
-    // info!("Cheatsheets: {:?}", serde_json::to_string(&res).unwrap());
     res
 }
 

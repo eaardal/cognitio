@@ -17,6 +17,7 @@ export interface Directory {
 
 export interface FileChangedPayload {
 	path: string;
+	event: string;
 }
 export interface CognitioConfigChangedPayload {
 	config: CognitioConfig;

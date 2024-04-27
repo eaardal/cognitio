@@ -8,7 +8,7 @@ use log4rs::append::console::ConsoleAppender;
 use log4rs::append::file::FileAppender;
 use log4rs::config::{Appender, Config as Log4rsConfig, Root};
 use log4rs::encode::pattern::PatternEncoder;
-use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::Deserialize;
 use serde::Serialize;
 use serde_yaml;
@@ -42,6 +42,13 @@ pub struct Directory {
 #[derive(Clone, serde::Serialize)]
 pub struct FileChangedPayload {
     pub path: String,
+    pub event: String,
+}
+
+#[derive(Clone, serde::Serialize)]
+pub struct FileEvent {
+    pub path: String,
+    pub event: String,
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -121,7 +128,7 @@ fn run_tauri() -> Result<(), tauri::Error> {
         error!("Failed to fix PATH environment variable: {error:?}")
     }
 
-    let (sender, receiver) = channel::<String>();
+    let (sender, receiver) = channel::<FileEvent>();
     let cheatsheet_sender = sender.clone();
     let cognitio_config_sender = sender.clone();
 
@@ -292,10 +299,10 @@ fn list_cheatsheet_directories() -> Vec<Directory> {
     res
 }
 
-fn emit_events_to_frontend_when_files_change(receiver: Receiver<String>, tauri_app: AppHandle) {
+fn emit_events_to_frontend_when_files_change(receiver: Receiver<FileEvent>, tauri_app: AppHandle) {
     tauri::async_runtime::spawn(async move {
         for msg in receiver.iter() {
-            if msg.ends_with("cognitio.yaml") {
+            if msg.path.ends_with("cognitio.yaml") {
                 tauri_app
                     .emit_all(
                         "cognitio_config_changed",
@@ -306,31 +313,37 @@ fn emit_events_to_frontend_when_files_change(receiver: Receiver<String>, tauri_a
                     .unwrap();
             } else {
                 tauri_app
-                    .emit_all("file_changed", FileChangedPayload { path: msg })
+                    .emit_all(
+                        "file_changed",
+                        FileChangedPayload {
+                            path: msg.path,
+                            event: msg.event,
+                        },
+                    )
                     .unwrap();
             }
         }
     });
 }
 
-fn watch_cheatsheet_directories(on_file_changed: Sender<String>) {
+fn watch_cheatsheet_directories(on_file_event: Sender<FileEvent>) {
     for dir in list_cheatsheet_directories() {
-        tauri::async_runtime::spawn(watch_dir(dir.path, on_file_changed.clone()));
+        tauri::async_runtime::spawn(watch_dir(dir.path, on_file_event.clone()));
     }
 }
 
-fn watch_cognitio_config_file(on_file_changed: Sender<String>) {
+fn watch_cognitio_config_file(on_file_event: Sender<FileEvent>) {
     let home = cognitio_home_dir();
-    tauri::async_runtime::spawn(watch_dir(home, on_file_changed.clone()));
+    tauri::async_runtime::spawn(watch_dir(home, on_file_event.clone()));
 }
 
-async fn watch_dir(path: String, on_file_changed: Sender<String>) {
-    if let Err(error) = watch(path.clone(), on_file_changed) {
+async fn watch_dir(path: String, on_file_event: Sender<FileEvent>) {
+    if let Err(error) = watch(path.clone(), on_file_event) {
         error!("Watch {} error: {error:?}", path.to_string());
     }
 }
 
-fn watch<P: AsRef<Path>>(path: P, on_file_changed: Sender<String>) -> notify::Result<()> {
+fn watch<P: AsRef<Path>>(path: P, on_file_event: Sender<FileEvent>) -> notify::Result<()> {
     let (tx, rx) = channel();
 
     let mut watcher = RecommendedWatcher::new(tx, Config::default())?;
@@ -339,10 +352,47 @@ fn watch<P: AsRef<Path>>(path: P, on_file_changed: Sender<String>) -> notify::Re
     for res in rx {
         match res {
             Ok(event) => {
-                info!("File changed: {:?}", event.paths);
-                on_file_changed
-                    .send(event.paths[0].to_str().unwrap_or_default().into())
-                    .unwrap();
+                info!("File event: {:?}", event);
+
+                if let Some(path) = event.paths.first() {
+                    let path_str = path.to_str().unwrap_or_default().to_string();
+
+                    match event.kind {
+                        EventKind::Create(_) => {
+                            on_file_event
+                                .send(FileEvent {
+                                    path: path_str,
+                                    event: "create".to_string(),
+                                })
+                                .unwrap();
+                        }
+                        EventKind::Remove(_) => {
+                            on_file_event
+                                .send(FileEvent {
+                                    path: path_str,
+                                    event: "remove".to_string(),
+                                })
+                                .unwrap();
+                        }
+                        EventKind::Modify(_) => {
+                            // We seem to get the Modify event when deleting files.
+                            // Check if the file exists and send the correct event type.
+                            let action = if check_if_path_exists(path_str.as_str()) {
+                                "modify".to_string()
+                            } else {
+                                "remove".to_string()
+                            };
+
+                            on_file_event
+                                .send(FileEvent {
+                                    path: path_str,
+                                    event: action,
+                                })
+                                .unwrap();
+                        }
+                        _ => {}
+                    }
+                }
             }
             Err(error) => error!(
                 "Failed to watch {}: {error:?}",
@@ -352,6 +402,10 @@ fn watch<P: AsRef<Path>>(path: P, on_file_changed: Sender<String>) -> notify::Re
     }
 
     Ok(())
+}
+
+fn check_if_path_exists(path_str: &str) -> bool {
+    Path::new(path_str).exists()
 }
 
 fn read_file_to_string(file_path: &str) -> std::io::Result<String> {

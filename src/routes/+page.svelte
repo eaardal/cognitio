@@ -137,6 +137,10 @@
 			const unlistenFileChanged = await listenForFileChangedEvents(
 				(event: Event<FileChangedPayload>) => {
 					void loadCheatsheetSection(event.payload.path);
+
+					if (event.payload.event === 'create' || event.payload.event === 'remove') {
+						void loadCheatsheetDirectories();
+					}
 				}
 			);
 			subscriptions.push(unlistenFileChanged);

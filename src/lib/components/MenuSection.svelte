@@ -3,12 +3,14 @@
 	import orderBy from 'lodash/orderBy';
 	import type { MenuItem, MenuSection } from '$lib/models';
 	import MenuSubSection from './MenuSubSection.svelte';
+	import Tooltip from './Tooltip.svelte';
 
 	const dispatch = createEventDispatcher();
 
 	export let menuSection: MenuSection | undefined;
 	export let activeMenuItemId: string | undefined;
 	export let showSectionTitle: boolean = false;
+	let showEditButton = false;
 
 	function onMenuItemClick(menuItem: MenuItem): undefined {
 		dispatch('menu-item-click', menuItem);
@@ -27,6 +29,10 @@
 		});
 	}
 
+	function onEditClick() {
+		dispatch('edit-click', { path: menuSection?.path });
+	}
+
 	onMount(() => {
 		removeAnchorHref();
 	});
@@ -34,8 +40,17 @@
 
 <div class="menu-section">
 	{#if showSectionTitle && menuSection}
-		<li class="menu-section-title">
-			<div>{menuSection.title}</div>
+		<li
+			class="menu-section-title"
+			on:mouseenter={() => (showEditButton = true)}
+			on:mouseleave={() => (showEditButton = false)}
+		>
+			<div>
+				{menuSection.title}
+			</div>
+			{#if showEditButton}
+				<button class="edit-btn" on:click={() => onEditClick()}>Edit</button>
+			{/if}
 		</li>
 	{/if}
 
@@ -52,6 +67,11 @@
 <style>
 	.menu-section {
 		margin-bottom: 16px;
+	}
+
+	.menu-section-title {
+		display: flex;
+		align-items: center;
 	}
 
 	.menu-section-title div {
@@ -73,5 +93,28 @@
 	.active > a {
 		font-weight: 600;
 		color: var(--white);
+	}
+
+	.edit-btn {
+		display: inline-block;
+		border: none;
+		padding: 2px 4px;
+		margin: 0;
+		text-decoration: none;
+		background: var(--foreground-lighter);
+		color: var(--accent);
+		font-family: sans-serif;
+		font-size: 0.8rem;
+		cursor: pointer;
+		text-align: center;
+		transition: background 250ms ease-in-out, transform 150ms ease;
+		border-radius: 4px;
+		margin-left: 16px;
+		height: fit-content;
+	}
+
+	.edit-btn:hover,
+	.edit-btn:focus {
+		background: color-mix(in srgb, var(--foreground) 60%, var(--white));
 	}
 </style>

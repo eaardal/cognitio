@@ -33,6 +33,7 @@ export interface MenuSection {
 	title: string;
 	items: MenuItem[];
 	tooltipText: string | undefined;
+	path: string;
 }
 
 export interface CheatsheetInfo {

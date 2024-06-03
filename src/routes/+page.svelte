@@ -129,6 +129,12 @@
 		});
 	}
 
+	function editCheatsheet(event: CustomEvent<{ path: string }>) {
+		invokeEditDirectoryCommand(event.detail.path).catch((e) => {
+			console.error('Failed to invoke edit directory command', e);
+		});
+	}
+
 	onMount(() => {
 		async function initialize() {
 			await loadCheatsheetDirectories();
@@ -171,6 +177,7 @@
 			{activeMenuItemId}
 			on:menu-item-click={menuItemClicked}
 			on:edit-cognitio-config-click={editCognitioConfig}
+			on:edit-cheatsheet-click={editCheatsheet}
 		/>
 
 		{#if typeof cheatsheetDirectories === 'undefined' || menuSections?.length === 0}

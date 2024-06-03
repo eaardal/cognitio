@@ -165,34 +165,10 @@ fn setup_logger() {
 }
 
 fn list_tree_down_to_snippet_names() {
-    // This is a placeholder for the actual implementation
-    println!("Listing tree down to snippet names...");
-
     let dirs = list_cheatsheet_directories();
     let mut sorted_dirs = sort_directories_and_files(&dirs);
     enrich_directories_with_shorthand_ids(&mut sorted_dirs);
     print_directory_tree(&dirs)
-    // sorted_dirs.iter().for_each(|dir| {
-    //     println!("{}", dir.name);
-    //     dir.files.iter().for_each(|file| {
-    //         println!("  {}", file.name);
-    //     });
-    //     dir.sub_directories.iter().for_each(|sub_dir| {
-    //         println!(
-    //             "  {}    short ID: {}",
-    //             sub_dir.name,
-    //             make_short_id_from_two_first_letters_of_path_parts(&sub_dir.path, 2)
-    //         );
-    //         sub_dir.files.iter().for_each(|file| {
-    //             println!(
-    //                 "    {}    short ID: {} ({})",
-    //                 file.name,
-    //                 make_short_id_from_two_first_letters_of_path_parts(&file.path, 3),
-    //                 file.path
-    //             );
-    //         });
-    //     });
-    // });
 }
 
 fn print_directory_tree(dirs: &Vec<Directory>) {

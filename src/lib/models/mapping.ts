@@ -16,7 +16,8 @@ export function mapDirectoriesToMenuSections(directories: Directory[]): MenuSect
 		const menuSection: MenuSection = {
 			title: directory.name,
 			tooltipText: directory.path,
-			items: []
+			items: [],
+			path: directory.path
 		};
 
 		if (directory.files.length > 0) {

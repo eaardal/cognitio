@@ -24,6 +24,10 @@
 		onMenuItemClick(event.detail);
 	}
 
+	function onEditCheatsheetClick(event: CustomEvent<{ path: string }>) {
+		dispatch('edit-cheatsheet-click', event.detail);
+	}
+
 	function stringifyUserMenuStyling(styles: Record<string, string> | undefined) {
 		if (!styles) {
 			return '';
@@ -54,6 +58,7 @@
 				{activeMenuItemId}
 				showSectionTitle={menuSections.length > 1}
 				on:menu-item-click={propagateMenuItemClick}
+				on:edit-click={onEditCheatsheetClick}
 			/>
 		{/each}
 	</ul>
